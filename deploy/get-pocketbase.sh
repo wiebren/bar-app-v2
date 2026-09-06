@@ -7,6 +7,16 @@ set -eu
 VERSION=0.40.3   # the version the migrations/hooks were tested against
 DIR="$(cd "$(dirname "$0")/../pocketbase" && pwd)"
 
+# skip the download when the pinned version is already installed
+if [ -x "$DIR/pocketbase" ]; then
+	CURRENT="$("$DIR/pocketbase" --version 2>/dev/null | awk '{print $NF}')"
+	if [ "$CURRENT" = "$VERSION" ]; then
+		echo "PocketBase $VERSION already installed, nothing to do."
+		exit 0
+	fi
+	echo "PocketBase $CURRENT installed, replacing with pinned ${VERSION}..."
+fi
+
 case "$(uname -s)" in
 	Linux) OS=linux ;;
 	Darwin) OS=darwin ;;
