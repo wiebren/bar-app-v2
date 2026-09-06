@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { pb, displayName, euro } from '$lib/pb';
+	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
 	let users = $state<RecordModel[]>([]);
+	let showInactive = $state(false);
 	let editing = $state<RecordModel | null>(null);
 	let adding = $state(false);
 	let form = $state({ first_name: '', infix: '', last_name: '', email: '', phone: '', active: true, role: 'user' });
@@ -10,9 +12,13 @@
 	let error = $state('');
 
 	async function load() {
-		users = await pb.collection('users').getFullList({ sort: 'first_name,last_name' });
+		users = await pb.collection('users').getFullList({
+			filter: showInactive ? '' : 'active = true',
+			sort: 'first_name,last_name'
+		});
 	}
 	$effect(() => {
+		void showInactive; // reload when the toggle changes
 		load();
 	});
 
@@ -131,25 +137,33 @@
 {#if msg}<p class="msg">{msg}</p>{/if}
 {#if error}<p class="error">{error}</p>{/if}
 
+<label class="toggle">
+	<input type="checkbox" bind:checked={showInactive} />
+	toon ook inactieve rekeningen
+</label>
+
 <div class="tablewrap">
 	<table>
 		<thead>
-			<tr><th>Naam</th><th>E-mail</th><th>Saldo</th><th>Status</th><th></th></tr>
+			<tr><th>Naam</th><th>Saldo</th><th></th></tr>
 		</thead>
 		<tbody>
 			{#each users as u (u.id)}
 				<tr class:inactive={!u.active}>
-					<td>
+					<td class="name">
 						{displayName(u)}
 						{#if u.role === 'admin'}<span class="chip">beheerder</span>{/if}
+						{#if showInactive && !u.active}<span class="chip off">inactief</span>{/if}
 					</td>
-					<td>{u.email}</td>
 					<td>{euro(u.balance ?? 0)}</td>
-					<td>{u.active ? 'actief' : 'inactief'}</td>
-					<td>
-						<button class="link" onclick={() => startEdit(u)}>wijzig</button>
+					<td class="actions">
+						<button class="iconbtn small" onclick={() => startEdit(u)} aria-label="Wijzig {displayName(u)}" title="Wijzig">
+							<Icon name="pencil" size={18} />
+						</button>
 						{#if !u.active}
-							<button class="link danger" onclick={() => remove(u)}>verwijder</button>
+							<button class="iconbtn small danger" onclick={() => remove(u)} aria-label="Verwijder {displayName(u)}" title="Verwijder">
+								<Icon name="trash" size={18} />
+							</button>
 						{/if}
 					</td>
 				</tr>
@@ -164,18 +178,34 @@
 		justify-content: space-between;
 	}
 	.inactive {
-		opacity: 0.5;
+		opacity: 0.55;
 	}
-	.link {
-		background: none;
-		border: none;
-		color: var(--ink);
-		font-family: inherit;
-		text-decoration: underline;
+	.toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-top: 0.9rem;
+		font-size: 0.9rem;
+		color: var(--muted);
 		cursor: pointer;
-		padding: 0;
 	}
-	.link.danger {
+	.name {
+		max-width: 12rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.actions {
+		text-align: right;
+	}
+	.iconbtn.small {
+		width: 2.2rem;
+		height: 2.2rem;
+	}
+	.iconbtn.danger {
 		color: var(--bad);
+	}
+	.chip.off {
+		background: color-mix(in srgb, var(--muted) 14%, transparent);
+		color: var(--muted);
 	}
 </style>
