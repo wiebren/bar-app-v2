@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { pb, displayName, euro, getSettings } from '$lib/pb';
 	import BalanceBadge from '$lib/components/BalanceBadge.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
 	const QUANTITIES = [1, 2, 3, 4, 5, 6, 24];
@@ -45,8 +46,11 @@
 
 {#if tabUser && product}
 	{#if done}
-		<h1>Je bestelling is verwerkt ✔</h1>
-		<p>Nieuw saldo: <BalanceBadge balance={newBalance} yellowThreshold={yellow} /></p>
+		<div class="donebox">
+			<span class="check"><Icon name="check" size={28} /></span>
+			<h1>Bestelling verwerkt</h1>
+			<p>Nieuw saldo: <BalanceBadge balance={newBalance} yellowThreshold={yellow} /></p>
+		</div>
 	{:else if !qty}
 		<h1>{product.name} — hoeveel?</h1>
 		<div class="qty">
@@ -54,18 +58,30 @@
 				<button onclick={() => (qty = n)}>{n}</button>
 			{/each}
 		</div>
-		<a href="/tab/{tabUser.id}">Annuleren</a>
+		<a class="cancel" href="/tab/{tabUser.id}">Annuleren</a>
 	{:else}
 		<h1>Bevestig bestelling</h1>
-		<p class="line">{qty}× {product.name}: <strong>{euro(total)}</strong> in totaal.</p>
-		<p>
-			Oud: <BalanceBadge balance={tabUser.balance ?? 0} yellowThreshold={yellow} />
-			→ Nieuw: <BalanceBadge balance={newBalance} yellowThreshold={yellow} />
-		</p>
-		<p class="who">op rekening van {displayName(tabUser)}</p>
+		<div class="card">
+			<p class="line">
+				{qty}× {product.name}
+				<strong>{euro(total)}</strong>
+			</p>
+			<p class="who">op rekening van {displayName(tabUser)}</p>
+			<div class="balances">
+				<span>
+					<span class="lbl">Oud</span>
+					<BalanceBadge balance={tabUser.balance ?? 0} yellowThreshold={yellow} />
+				</span>
+				<span class="arrow">→</span>
+				<span>
+					<span class="lbl">Nieuw</span>
+					<BalanceBadge balance={newBalance} yellowThreshold={yellow} />
+				</span>
+			</div>
+		</div>
 		<div class="actions">
-			<button class="ok" onclick={confirm} disabled={busy}>OK</button>
-			<button class="cancel" onclick={() => (qty = 0)} disabled={busy}>Terug</button>
+			<button class="ok" onclick={confirm} disabled={busy}>Bevestigen</button>
+			<button class="back" onclick={() => (qty = 0)} disabled={busy}>Terug</button>
 		</div>
 		{#if error}<p class="error">{error}</p>{/if}
 	{/if}
@@ -75,24 +91,62 @@
 	.qty {
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
-		gap: 0.5rem;
-		margin-bottom: 1rem;
+		gap: 0.6rem;
+		margin-bottom: 1.2rem;
 	}
 	.qty button {
-		padding: 1rem 0;
-		font-size: 1.3rem;
+		aspect-ratio: 1.15;
+		font-size: 1.4rem;
 		font-weight: 700;
-		border: none;
-		border-radius: 0.6rem;
-		background: #fff;
+		font-family: inherit;
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		background: var(--surface);
+		color: inherit;
 		cursor: pointer;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+		box-shadow: var(--shadow);
+	}
+	.qty button:active {
+		transform: scale(0.95);
+	}
+	.cancel {
+		color: var(--muted);
+	}
+	.card {
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		box-shadow: var(--shadow);
+		padding: 1.1rem 1.2rem;
+		margin-bottom: 1rem;
 	}
 	.line {
+		display: flex;
+		justify-content: space-between;
 		font-size: 1.15rem;
+		margin: 0;
 	}
 	.who {
-		color: #5c564e;
+		color: var(--muted);
+		margin: 0.2rem 0 0.9rem;
+		font-size: 0.92rem;
+	}
+	.balances {
+		display: flex;
+		align-items: center;
+		gap: 0.8rem;
+	}
+	.balances > span {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+	.lbl {
+		font-size: 0.8rem;
+		color: var(--muted);
+	}
+	.arrow {
+		color: var(--muted);
 	}
 	.actions {
 		display: flex;
@@ -100,20 +154,45 @@
 	}
 	.actions button {
 		flex: 1;
-		padding: 1rem;
-		font-size: 1.1rem;
+		padding: 0.95rem;
+		font-size: 1.05rem;
+		font-weight: 600;
+		font-family: inherit;
 		border: none;
-		border-radius: 0.6rem;
+		border-radius: var(--radius-s);
 		cursor: pointer;
 	}
 	.ok {
-		background: #2e7d32;
+		background: var(--good);
 		color: #fff;
 	}
-	.cancel {
-		background: #ddd;
+	.back {
+		background: var(--surface);
+		border: 1px solid var(--line) !important;
+		color: inherit;
+	}
+	.actions button:disabled {
+		opacity: 0.5;
 	}
 	.error {
-		color: #c62828;
+		color: var(--bad);
+	}
+	.donebox {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		padding-top: 3rem;
+		gap: 0.4rem;
+	}
+	.check {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 3.4rem;
+		height: 3.4rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--good) 14%, transparent);
+		color: var(--good);
 	}
 </style>

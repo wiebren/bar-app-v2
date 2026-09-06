@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { pb } from '$lib/pb';
 
 	let email = $state('');
@@ -40,48 +39,94 @@
 	}
 </script>
 
-<h1>Inloggen</h1>
+<div class="wrap">
+	<div class="card">
+		<img src="/favicon.png" alt="" class="logo" />
+		<h1>Inloggen</h1>
 
-{#if !otpId}
-	<form onsubmit={requestCode}>
-		<label for="email">E-mailadres</label>
-		<input id="email" type="email" bind:value={email} required autocomplete="email" />
-		<button disabled={busy}>Stuur inlogcode</button>
-	</form>
-{:else}
-	<p>Je ontvangt per e-mail een code om in te loggen.</p>
-	<form onsubmit={verify}>
-		<label for="code">Code</label>
-		<input id="code" inputmode="numeric" bind:value={code} required />
-		<button disabled={busy}>Inloggen</button>
-	</form>
-{/if}
+		{#if !otpId}
+			<p class="hint">Vul je e-mailadres in, je ontvangt een inlogcode.</p>
+			<form onsubmit={requestCode}>
+				<label for="email">E-mailadres</label>
+				<input id="email" type="email" bind:value={email} required autocomplete="email" />
+				<button disabled={busy}>Stuur inlogcode</button>
+			</form>
+		{:else}
+			<p class="hint">We hebben een code gemaild naar <strong>{email}</strong>.</p>
+			<form onsubmit={verify}>
+				<label for="code">Code</label>
+				<input id="code" inputmode="numeric" autocomplete="one-time-code" bind:value={code} required />
+				<button disabled={busy}>Inloggen</button>
+			</form>
+		{/if}
 
-{#if error}<p class="error">{error}</p>{/if}
+		{#if error}<p class="error">{error}</p>{/if}
+	</div>
+</div>
 
 <style>
+	.wrap {
+		display: flex;
+		justify-content: center;
+		padding-top: 8vh;
+	}
+	.card {
+		width: 100%;
+		max-width: 22rem;
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		box-shadow: var(--shadow);
+		padding: 1.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+	.logo {
+		width: 3rem;
+		height: 3rem;
+		border-radius: 0.8rem;
+	}
+	h1 {
+		margin: 0.4rem 0 0;
+	}
+	.hint {
+		color: var(--muted);
+		margin: 0 0 0.6rem;
+		font-size: 0.95rem;
+	}
 	form {
 		display: flex;
 		flex-direction: column;
-		gap: 0.6rem;
-		max-width: 20rem;
+		gap: 0.55rem;
+	}
+	label {
+		font-size: 0.85rem;
+		color: var(--muted);
 	}
 	input {
-		padding: 0.7rem;
-		font-size: 1.1rem;
-		border: 1px solid #ccc;
-		border-radius: 0.4rem;
+		padding: 0.75rem;
+		font-size: 1.05rem;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-s);
+		font-family: inherit;
 	}
 	button {
-		padding: 0.8rem;
-		font-size: 1.05rem;
+		margin-top: 0.4rem;
+		padding: 0.85rem;
+		font-size: 1.02rem;
+		font-weight: 600;
 		border: none;
-		border-radius: 0.4rem;
-		background: #24211d;
-		color: #fff;
+		border-radius: var(--radius-s);
+		background: var(--ink);
+		color: var(--surface);
 		cursor: pointer;
 	}
+	button:disabled {
+		opacity: 0.5;
+	}
 	.error {
-		color: #c62828;
+		color: var(--bad);
+		font-size: 0.95rem;
 	}
 </style>

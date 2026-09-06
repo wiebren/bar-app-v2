@@ -81,20 +81,21 @@
 		margin-bottom: 1rem;
 	}
 	.figure {
-		background: #fff;
-		border-radius: 0.6rem;
-		padding: 0.8rem;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		padding: 0.9rem;
+		box-shadow: var(--shadow);
 		display: flex;
 		flex-direction: column;
 	}
 	.value {
 		font-size: 1.3rem;
-		font-weight: 700;
+		font-weight: 800;
 		font-variant-numeric: tabular-nums;
 	}
 	.label {
 		font-size: 0.8rem;
-		color: #5c564e;
+		color: var(--muted);
 	}
 </style>

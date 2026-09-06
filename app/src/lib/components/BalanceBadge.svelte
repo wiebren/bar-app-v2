@@ -4,9 +4,7 @@
 	let { balance, yellowThreshold }: { balance: number; yellowThreshold: number } = $props();
 
 	// Numeric comparison — the old app compared strings and sometimes colored wrong.
-	const level = $derived(
-		balance > yellowThreshold ? 'green' : balance > 0 ? 'orange' : 'red'
-	);
+	const level = $derived(balance > yellowThreshold ? 'good' : balance > 0 ? 'warn' : 'bad');
 </script>
 
 <span class="badge {level}">{euro(balance)}</span>
@@ -14,19 +12,23 @@
 <style>
 	.badge {
 		display: inline-block;
-		padding: 0.15rem 0.5rem;
+		padding: 0.18rem 0.6rem;
 		border-radius: 999px;
-		font-weight: 600;
+		font-size: 0.88em;
+		font-weight: 700;
 		font-variant-numeric: tabular-nums;
-		color: #fff;
+		white-space: nowrap;
 	}
-	.green {
-		background: #2e7d32;
+	.good {
+		background: color-mix(in srgb, var(--good) 12%, transparent);
+		color: var(--good);
 	}
-	.orange {
-		background: #e65100;
+	.warn {
+		background: color-mix(in srgb, var(--warn) 12%, transparent);
+		color: var(--warn);
 	}
-	.red {
-		background: #c62828;
+	.bad {
+		background: color-mix(in srgb, var(--bad) 12%, transparent);
+		color: var(--bad);
 	}
 </style>

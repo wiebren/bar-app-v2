@@ -117,7 +117,8 @@
 	.link {
 		background: none;
 		border: none;
-		color: #24211d;
+		color: var(--ink);
+		font-family: inherit;
 		text-decoration: underline;
 		cursor: pointer;
 		padding: 0;

@@ -133,7 +133,10 @@
 		<tbody>
 			{#each users as u (u.id)}
 				<tr class:inactive={!u.active}>
-					<td>{displayName(u)}{u.role === 'admin' ? ' 🔧' : ''}</td>
+					<td>
+						{displayName(u)}
+						{#if u.role === 'admin'}<span class="chip">beheerder</span>{/if}
+					</td>
 					<td>{u.email}</td>
 					<td>{euro(u.balance ?? 0)}</td>
 					<td>{u.active ? 'actief' : 'inactief'}</td>
@@ -160,12 +163,13 @@
 	.link {
 		background: none;
 		border: none;
-		color: #24211d;
+		color: var(--ink);
+		font-family: inherit;
 		text-decoration: underline;
 		cursor: pointer;
 		padding: 0;
 	}
 	.link.danger {
-		color: #c62828;
+		color: var(--bad);
 	}
 </style>

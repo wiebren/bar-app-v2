@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { pb, displayName, getSettings } from '$lib/pb';
 	import BalanceBadge from '$lib/components/BalanceBadge.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
 	let users = $state<RecordModel[]>([]);
@@ -30,7 +31,9 @@
 		{/each}
 	</div>
 {:else}
-	<button class="back" onclick={() => (letter = '')}>← andere letter</button>
+	<button class="back" onclick={() => (letter = '')}>
+		<Icon name="back" size={18} /> andere letter
+	</button>
 	<div class="tiles">
 		{#each matches as u (u.id)}
 			<a class="tile" href="/tab/{u.id}">
@@ -46,24 +49,35 @@
 <style>
 	.letters {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(3.2rem, 1fr));
-		gap: 0.5rem;
+		grid-template-columns: repeat(auto-fill, minmax(3.4rem, 1fr));
+		gap: 0.6rem;
 	}
 	.letter {
-		padding: 0.9rem 0;
-		font-size: 1.2rem;
+		aspect-ratio: 1;
+		font-size: 1.25rem;
 		font-weight: 700;
-		border: none;
-		border-radius: 0.6rem;
-		background: #fff;
+		font-family: inherit;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-s);
+		background: var(--surface);
+		color: inherit;
 		cursor: pointer;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+		box-shadow: var(--shadow);
+	}
+	.letter:active {
+		transform: scale(0.95);
 	}
 	.back {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
 		background: none;
 		border: none;
+		color: var(--muted);
+		font-family: inherit;
+		font-size: 0.95rem;
 		cursor: pointer;
-		margin-bottom: 0.8rem;
-		font-size: 1rem;
+		padding: 0;
+		margin-bottom: 0.9rem;
 	}
 </style>
