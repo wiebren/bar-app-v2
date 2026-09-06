@@ -1,0 +1,15 @@
+{
+	"name": "Bar-app",
+	"short_name": "Bar-app",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#f5f2ee",
+	"theme_color": "#24211d",
+	"icons": [
+		{
+			"src": "/favicon.png",
+			"sizes": "192x192",
+			"type": "image/png"
+		}
+	]
+}

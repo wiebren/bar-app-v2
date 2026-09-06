@@ -33,13 +33,15 @@ npm install
 npm run dev        # against PUBLIC_PB_URL from .env (default http://127.0.0.1:8090)
 ```
 
-Production: `npm run build` produces a static SPA in `build/`. Either serve it from
-any static host, or copy it into `pocketbase/pb_public/` so the single PocketBase
-process serves both API and app:
+Production: the built SPA is **committed** in `pocketbase/pb_public/`, so the server
+needs no Node — a deploy is just `git pull` (+ `./pocketbase migrate up` and a service
+restart when backend files changed). After frontend changes, refresh it and commit:
 
 ```sh
 npm run build && rm -rf ../pocketbase/pb_public && cp -r build ../pocketbase/pb_public
 ```
+
+(`app/.env.production` pins `PUBLIC_PB_URL=/`, so the committed build is domain-independent.)
 
 ## Server endpoints (pb_hooks)
 
