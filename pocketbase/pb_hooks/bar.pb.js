@@ -117,6 +117,29 @@ routerAdd(
 );
 
 // ---------------------------------------------------------------------------
+// Change a user's email (admin). PocketBase only allows auth-record email
+// changes for superusers via the records API, so the admin UI goes through
+// this server-side route instead.
+// ---------------------------------------------------------------------------
+routerAdd(
+	'POST',
+	'/api/bar/set-email',
+	(e) => {
+		if (e.auth.getString('role') !== 'admin') throw new ForbiddenError();
+
+		const data = new DynamicModel({ user: '', email: '' });
+		e.bindBody(data);
+		if (!data.email || !data.email.includes('@')) throw new BadRequestError('Ongeldig e-mailadres.');
+
+		const user = e.app.findRecordById('users', data.user);
+		user.setEmail(data.email);
+		e.app.save(user);
+		return e.json(200, { email: data.email });
+	},
+	$apis.requireAuth()
+);
+
+// ---------------------------------------------------------------------------
 // 5.3 Stock count (admin): books the correction delta, always dated now.
 // ---------------------------------------------------------------------------
 routerAdd(

@@ -23,6 +23,10 @@ export async function getSettings(): Promise<RecordModel> {
 	return settingsCache;
 }
 
+export function invalidateSettings() {
+	settingsCache = null;
+}
+
 export function displayName(u: { [key: string]: unknown }): string {
 	return [u.first_name, u.infix, u.last_name].filter(Boolean).join(' ') as string;
 }

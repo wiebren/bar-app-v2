@@ -1,2 +1,125 @@
-<h1>Nog niet gebouwd</h1>
-<p>Deze beheersectie volgt in een latere stap — zie <code>bar-app-spec.md</code> §6.</p>
+<script lang="ts">
+	import { pb, euro } from '$lib/pb';
+	import type { RecordModel } from 'pocketbase';
+
+	let products = $state<RecordModel[]>([]);
+	let editing = $state<RecordModel | null>(null);
+	let adding = $state(false);
+	let form = $state({ name: '', price: 0, sort_order: 1000, sellable: true, stock_tracked: true });
+	let msg = $state('');
+	let error = $state('');
+
+	async function load() {
+		products = await pb.collection('products').getFullList({ sort: 'sort_order,name' });
+	}
+	$effect(() => {
+		load();
+	});
+
+	function startAdd() {
+		adding = true;
+		editing = null;
+		form = { name: '', price: 0, sort_order: 1000, sellable: true, stock_tracked: true };
+	}
+
+	function startEdit(p: RecordModel) {
+		editing = p;
+		adding = false;
+		form = {
+			name: p.name,
+			price: p.price,
+			sort_order: p.sort_order ?? 1000,
+			sellable: !!p.sellable,
+			stock_tracked: !!p.stock_tracked
+		};
+	}
+
+	async function save(e: SubmitEvent) {
+		e.preventDefault();
+		msg = '';
+		error = '';
+		try {
+			if (adding) {
+				await pb.collection('products').create(form);
+				msg = 'Product toegevoegd.';
+			} else if (editing) {
+				await pb.collection('products').update(editing.id, form);
+				msg = 'Product bijgewerkt.';
+			}
+			adding = false;
+			editing = null;
+			await load();
+		} catch (err) {
+			error = (err as Error).message || 'Opslaan mislukt.';
+		}
+	}
+</script>
+
+<h1>Producten</h1>
+
+{#if !adding && !editing}
+	<button class="btn" onclick={startAdd}>+ Nieuw product</button>
+{/if}
+
+{#if adding || editing}
+	<form class="panel" onsubmit={save}>
+		<h2>{adding ? 'Nieuw product' : `Wijzig: ${editing!.name}`}</h2>
+		<div class="row">
+			<label>Naam<input bind:value={form.name} required maxlength="50" /></label>
+			<label>Prijs (€)
+				<input type="number" bind:value={form.price} min="0" step="0.01" required />
+			</label>
+			<label>Volgorde
+				<input type="number" bind:value={form.sort_order} min="0" max="9999" step="1" />
+			</label>
+		</div>
+		<div class="row">
+			<label class="check"><input type="checkbox" bind:checked={form.sellable} />Verkrijgbaar op de tap</label>
+			<label class="check"><input type="checkbox" bind:checked={form.stock_tracked} />Voorraad bijhouden</label>
+		</div>
+		<div class="row">
+			<button class="btn">Opslaan</button>
+			<button class="btn danger" type="button" onclick={() => { adding = false; editing = null; }}>
+				Annuleren
+			</button>
+		</div>
+	</form>
+{/if}
+
+{#if msg}<p class="msg">{msg}</p>{/if}
+{#if error}<p class="error">{error}</p>{/if}
+
+<!-- the sorted list doubles as the live preview of the till layout -->
+<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th>#</th><th>Product</th><th>Prijs</th><th>Tap</th><th>Voorraad</th><th></th></tr>
+		</thead>
+		<tbody>
+			{#each products as p (p.id)}
+				<tr class:inactive={!p.sellable}>
+					<td>{p.sort_order}</td>
+					<td>{p.name}</td>
+					<td>{euro(p.price)}</td>
+					<td>{p.sellable ? '✔' : '—'}</td>
+					<td>{p.stock_tracked ? '✔' : '—'}</td>
+					<td><button class="link" onclick={() => startEdit(p)}>wijzig</button></td>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+</div>
+
+<style>
+	.inactive {
+		opacity: 0.5;
+	}
+	.link {
+		background: none;
+		border: none;
+		color: #24211d;
+		text-decoration: underline;
+		cursor: pointer;
+		padding: 0;
+	}
+</style>

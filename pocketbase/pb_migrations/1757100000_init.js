@@ -98,13 +98,15 @@ migrate(
 		});
 		app.save(payments);
 
-		// ---- stock_entries (append-only ledger; written by hooks) ----
+		// ---- stock_entries (append-only ledger) ----
+		// sales and counts are written by hooks; purchases may be booked directly
+		// by an admin, but only as themselves and only with a positive quantity
 		const stock = new Collection({
 			type: 'base',
 			name: 'stock_entries',
 			listRule: ADMIN,
 			viewRule: ADMIN,
-			createRule: null,
+			createRule: `${ADMIN} && @request.body.type = "purchase" && @request.body.qty > 0 && @request.body.actor = @request.auth.id && @request.body.order:isset = false`,
 			updateRule: null,
 			deleteRule: null,
 			fields: [
