@@ -43,7 +43,10 @@
 		try {
 			if (adding) {
 				// password is required by PocketBase but never usable: login is OTP-only
-				const pw = crypto.randomUUID() + crypto.randomUUID();
+				// (48 hex chars — PocketBase caps passwords at 71 characters)
+				const pw = Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) =>
+					b.toString(16).padStart(2, '0')
+				).join('');
 				await pb.collection('users').create({
 					...form,
 					password: pw,
@@ -68,7 +71,10 @@
 			editing = null;
 			await load();
 		} catch (err) {
-			error = (err as Error).message || 'Opslaan mislukt.';
+			// surface the first field-level error PocketBase reports, if any
+			const res = err as { response?: { data?: Record<string, { message?: string }> }; message?: string };
+			error =
+				Object.values(res.response?.data ?? {})[0]?.message || res.message || 'Opslaan mislukt.';
 		}
 	}
 

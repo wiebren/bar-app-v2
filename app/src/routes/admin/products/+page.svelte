@@ -50,7 +50,9 @@
 			editing = null;
 			await load();
 		} catch (err) {
-			error = (err as Error).message || 'Opslaan mislukt.';
+			const res = err as { response?: { data?: Record<string, { message?: string }> }; message?: string };
+			error =
+				Object.values(res.response?.data ?? {})[0]?.message || res.message || 'Opslaan mislukt.';
 		}
 	}
 </script>
