@@ -12,8 +12,9 @@ PocketBase + SvelteKit rebuild of the bar-app, per `bar-app-spec.md`
 
 ## Backend
 
-1. Download the PocketBase binary (not committed) into `pocketbase/`:
-   https://pocketbase.io/docs/ — pick the darwin/linux build, unzip, `chmod +x pocketbase`.
+1. Fetch the pinned PocketBase binary (not committed) into `pocketbase/`:
+   `./deploy/get-pocketbase.sh` — verifies the release checksum and detects OS/arch.
+   Upgrades later: `cd pocketbase && ./pocketbase update`, then restart the service.
 2. First run: `cd pocketbase && ./pocketbase serve` — migrations create all collections
    and seed the settings record. Create a superuser with the link it prints
    (the superuser is only for the PocketBase admin UI at `/_/`).
