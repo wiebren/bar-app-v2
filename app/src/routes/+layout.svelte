@@ -39,7 +39,10 @@
 	{#if pb.authStore.isValid}
 		<header>
 			<div class="inner">
-				<a href="/" class="brand">{title}</a>
+				<a href="/" class="brand">
+					<img src="/icon-192.png" alt="" class="logo" />
+					{title}
+				</a>
 				<nav>
 					<a href="/browse" class="iconbtn" aria-label="Andere rekening" title="Andere rekening">
 						<Icon name="users" />
@@ -129,10 +132,18 @@
 		align-items: center;
 	}
 	.brand {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55rem;
 		font-weight: 800;
 		font-size: 1.05rem;
 		letter-spacing: -0.01em;
 		text-decoration: none;
+	}
+	.logo {
+		width: 1.9rem;
+		height: 1.9rem;
+		border-radius: 0.5rem;
 	}
 	nav {
 		display: flex;

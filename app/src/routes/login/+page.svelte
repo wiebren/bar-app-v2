@@ -65,7 +65,7 @@
 
 <div class="wrap">
 	<div class="card">
-		<img src="/favicon.png" alt="" class="logo" />
+		<img src="/icon-192.png" alt="" class="logo" />
 		<h1>Inloggen</h1>
 
 		{#if autoLogin}
