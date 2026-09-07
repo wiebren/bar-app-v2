@@ -30,11 +30,15 @@
 			goto('/admin/stock');
 			return;
 		}
+		// ?product=… (from the product edit screen) skips the picker
+		const preselect = page.url.searchParams.get('product');
 		(async () => {
 			products = await pb.collection('products').getFullList({
 				filter: 'stock_tracked = true',
 				sort: 'sort_order,name'
 			});
+			const match = preselect && products.find((p) => p.id === preselect);
+			if (match && !product) pick(match);
 		})();
 	});
 
