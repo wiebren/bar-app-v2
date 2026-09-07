@@ -10,7 +10,7 @@ routerAdd(
 	(e) => {
 		const utils = require(`${__hooks}/bar_utils.js`);
 
-		const data = new DynamicModel({ user: '', product: '', qty: 0 });
+		const data = new DynamicModel({ user: '', product: '', qty: 0, party: '' });
 		e.bindBody(data);
 		const qty = Number(data.qty);
 		if (!Number.isInteger(qty) || qty < 1 || qty > 99) {
@@ -19,11 +19,28 @@ routerAdd(
 
 		let result = {};
 		let crossedRed = false;
+		let chargedUser = data.user;
 
 		e.app.runInTransaction((tx) => {
 			const product = tx.findRecordById('products', data.product);
 			if (!product.getBool('sellable')) throw new BadRequestError('Product niet beschikbaar.');
-			const tabUser = tx.findRecordById('users', data.user);
+
+			// party order: the host's tab is charged and the drinks count
+			// against the optional cap
+			if (data.party) {
+				const party = tx.findRecordById('parties', data.party);
+				if (new Date(party.getString('ends').replace(' ', 'T')) <= new Date()) {
+					throw new BadRequestError('De traktatie is voorbij.');
+				}
+				const cap = party.getInt('cap');
+				const used = party.getInt('used');
+				if (cap > 0 && used + qty > cap) throw new BadRequestError('De traktatie is op.');
+				party.set('used', used + qty);
+				tx.save(party);
+				chargedUser = party.getString('host');
+			}
+
+			const tabUser = tx.findRecordById('users', chargedUser);
 			if (!tabUser.getBool('active')) throw new BadRequestError('Rekening niet actief.');
 
 			const price = product.getFloat('price');
@@ -65,7 +82,7 @@ routerAdd(
 		if (crossedRed) {
 			try {
 				const settings = utils.getSettings(e.app);
-				const tabUser = e.app.findRecordById('users', data.user);
+				const tabUser = e.app.findRecordById('users', chargedUser);
 				utils.sendBalanceMail(e.app, settings, 'red', tabUser);
 			} catch (err) {
 				console.log('red-alert mail failed:', err);
@@ -175,6 +192,63 @@ routerAdd(
 			result = { previous: Number(row.total), counted, delta };
 		});
 		return e.json(200, result);
+	},
+	$apis.requireAuth()
+);
+
+// ---------------------------------------------------------------------------
+// Party mode ("Ik trakteer"): any user can start one; drinks ordered "op
+// rekening van" the host are charged to the host and count against the cap.
+// pbNow(): dates in the PB storage format ("2006-01-02 15:04:05.000Z") so
+// string comparison in filters works.
+// ---------------------------------------------------------------------------
+routerAdd(
+	'POST',
+	'/api/bar/party',
+	(e) => {
+		const data = new DynamicModel({ message: '', cap: 0, hours: 0 });
+		e.bindBody(data);
+		const hours = Number(data.hours);
+		const cap = Number(data.cap);
+		if (!Number.isInteger(hours) || hours < 1 || hours > 24) {
+			throw new BadRequestError('Ongeldige duur (1-24 uur).');
+		}
+		if (!Number.isInteger(cap) || cap < 0) throw new BadRequestError('Ongeldig maximum.');
+
+		const now = new Date().toISOString().replace('T', ' ');
+		const active = e.app.findRecordsByFilter('parties', 'ends > {:now}', '-created', 1, 0, {
+			now: now
+		});
+		if (active.length) throw new BadRequestError('Er is al een traktatie actief.');
+
+		const party = new Record(e.app.findCollectionByNameOrId('parties'));
+		party.set('host', e.auth.id);
+		party.set('message', String(data.message ?? '').slice(0, 100));
+		party.set('cap', cap);
+		party.set('used', 0);
+		party.set('ends', new Date(Date.now() + hours * 3600e3).toISOString());
+		e.app.save(party);
+		return e.json(200, { id: party.id });
+	},
+	$apis.requireAuth()
+);
+
+routerAdd(
+	'POST',
+	'/api/bar/party-stop',
+	(e) => {
+		const now = new Date().toISOString().replace('T', ' ');
+		const active = e.app.findRecordsByFilter('parties', 'ends > {:now}', '-created', 1, 0, {
+			now: now
+		});
+		if (!active.length) throw new BadRequestError('Geen actieve traktatie.');
+		const party = active[0];
+		if (party.getString('host') !== e.auth.id && e.auth.getString('role') !== 'admin') {
+			throw new ForbiddenError('Alleen de trakterende of een beheerder kan stoppen.');
+		}
+		party.set('ends', new Date().toISOString());
+		e.app.save(party);
+		return e.json(200, {});
 	},
 	$apis.requireAuth()
 );

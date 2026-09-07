@@ -8,6 +8,7 @@
 	let { children } = $props();
 	let title = $state('Bar-app');
 	let ready = $state(false);
+	let menuOpen = $state(false);
 
 	onMount(async () => {
 		if (!pb.authStore.isValid && page.url.pathname !== '/login') {
@@ -26,6 +27,7 @@
 	});
 
 	async function logout() {
+		menuOpen = false;
 		pb.authStore.clear();
 		await goto('/login');
 	}
@@ -69,9 +71,28 @@
 							<Icon name="wrench" />
 						</a>
 					{/if}
-					<button class="iconbtn" onclick={logout} aria-label="Uitloggen" title="Uitloggen">
-						<Icon name="logout" />
-					</button>
+					<div class="menuwrap">
+						<button
+							class="iconbtn"
+							onclick={() => (menuOpen = !menuOpen)}
+							aria-label="Menu"
+							aria-expanded={menuOpen}
+						>
+							<Icon name="dots" />
+						</button>
+						{#if menuOpen}
+							<button class="scrim" aria-label="Sluit menu" onclick={() => (menuOpen = false)}
+							></button>
+							<div class="menu">
+								<a href="/party" onclick={() => (menuOpen = false)}>
+									<Icon name="gift" size={18} /> Ik trakteer
+								</a>
+								<button onclick={logout}>
+									<Icon name="logout" size={18} /> Uitloggen
+								</button>
+							</div>
+						{/if}
+					</div>
 				</nav>
 			</div>
 		</header>
@@ -183,6 +204,54 @@
 	:global(.iconbtn:active) {
 		background: var(--bg);
 		color: var(--ink);
+	}
+	.menuwrap {
+		position: relative;
+	}
+	.scrim {
+		position: fixed;
+		inset: 0;
+		z-index: 19;
+		background: none;
+		border: none;
+		cursor: default;
+	}
+	.menu {
+		position: absolute;
+		top: calc(100% + 0.35rem);
+		right: 0;
+		z-index: 20;
+		min-width: 11rem;
+		display: flex;
+		flex-direction: column;
+		padding: 0.35rem;
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-s);
+		box-shadow: var(--shadow);
+	}
+	.menu a,
+	.menu button {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+		padding: 0.65rem 0.8rem;
+		font-size: 0.98rem;
+		font-family: inherit;
+		font-weight: 500;
+		text-align: left;
+		text-decoration: none;
+		border: none;
+		border-radius: calc(var(--radius-s) - 4px);
+		background: none;
+		color: inherit;
+		cursor: pointer;
+	}
+	.menu a:hover,
+	.menu a:active,
+	.menu button:hover,
+	.menu button:active {
+		background: var(--bg);
 	}
 
 	main {

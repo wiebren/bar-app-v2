@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { pb, displayName, euro, getSettings } from '$lib/pb';
+	import { pb, displayName, euro, getSettings, getActiveParty } from '$lib/pb';
 	import { BRANDS } from '$lib/brands';
 	import BalanceBadge from '$lib/components/BalanceBadge.svelte';
 	import BrandMark from '$lib/components/BrandMark.svelte';
@@ -11,10 +11,12 @@
 
 	let tabUser = $state<RecordModel | null>(null);
 	let product = $state<RecordModel | null>(null);
+	let party = $state<RecordModel | null>(null);
 	let qty = $state(0);
 	let yellow = $state(0);
 	let busy = $state(false);
 	let done = $state(false);
+	let paidByParty = $state(false);
 	let error = $state('');
 
 	$effect(() => {
@@ -23,20 +25,34 @@
 			yellow = (await getSettings()).yellow_threshold ?? 0;
 			tabUser = await pb.collection('users').getOne(user!);
 			product = await pb.collection('products').getOne(productId!);
+			party = await getActiveParty();
 		})();
 	});
 
 	const total = $derived(qty * (product?.price ?? 0));
 	const newBalance = $derived((tabUser?.balance ?? 0) - total);
+	// party option: not on the host's own tab, and only while the cap allows it
+	const partyOffer = $derived(
+		party && tabUser && party.host !== tabUser.id && (!party.cap || (party.used ?? 0) + qty <= party.cap)
+			? party
+			: null
+	);
+	const partyHostName = $derived(partyOffer ? displayName(partyOffer.expand?.host ?? {}) : '');
 
-	async function confirm() {
+	async function confirm(asParty = false) {
 		busy = true;
 		error = '';
 		try {
 			await pb.send('/api/bar/order', {
 				method: 'POST',
-				body: { user: tabUser!.id, product: product!.id, qty }
+				body: {
+					user: tabUser!.id,
+					product: product!.id,
+					qty,
+					...(asParty ? { party: party!.id } : {})
+				}
 			});
+			paidByParty = asParty;
 			done = true;
 			setTimeout(() => (location.href = `/tab/${tabUser!.id}`), 2000);
 		} catch {
@@ -51,7 +67,11 @@
 		<div class="donebox">
 			<span class="check"><Icon name="check" size={28} /></span>
 			<h1>Bestelling verwerkt</h1>
-			<p>Nieuw saldo: <BalanceBadge balance={newBalance} yellowThreshold={yellow} /></p>
+			{#if paidByParty}
+				<p>Op rekening van <strong>{partyHostName}</strong> — proost! 🎉</p>
+			{:else}
+				<p>Nieuw saldo: <BalanceBadge balance={newBalance} yellowThreshold={yellow} /></p>
+			{/if}
 		</div>
 	{:else if !qty}
 		<h1>Hoeveel?</h1>
@@ -99,10 +119,28 @@
 				</span>
 			</div>
 		</div>
-		<div class="actions">
-			<button class="ok" onclick={confirm} disabled={busy}>Bevestigen</button>
-			<button class="back" onclick={() => (qty = 0)} disabled={busy}>Terug</button>
-		</div>
+		{#if partyOffer}
+			<div class="partybox">
+				<p class="partyline">
+					<span class="gift"><Icon name="gift" size={20} /></span>
+					<strong>{partyHostName} trakteert{partyOffer.message ? `: ${partyOffer.message}` : '!'}</strong>
+				</p>
+				<div class="actions stacked">
+					<button class="ok" onclick={() => confirm(true)} disabled={busy}>
+						Op rekening van {partyHostName}
+					</button>
+					<button class="own" onclick={() => confirm(false)} disabled={busy}>
+						Op eigen rekening
+					</button>
+					<button class="back" onclick={() => (qty = 0)} disabled={busy}>Terug</button>
+				</div>
+			</div>
+		{:else}
+			<div class="actions">
+				<button class="ok" onclick={() => confirm(false)} disabled={busy}>Bevestigen</button>
+				<button class="back" onclick={() => (qty = 0)} disabled={busy}>Terug</button>
+			</div>
+		{/if}
 		{#if error}<p class="error">{error}</p>{/if}
 	{/if}
 {/if}
@@ -222,9 +260,34 @@
 	.arrow {
 		color: var(--muted);
 	}
+	.partybox {
+		border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+		background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+		border-radius: var(--radius);
+		padding: 0.9rem 1rem;
+	}
+	.partyline {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin: 0 0 0.8rem;
+	}
+	.gift {
+		display: inline-flex;
+		color: var(--accent);
+		flex-shrink: 0;
+	}
 	.actions {
 		display: flex;
 		gap: 0.6rem;
+	}
+	.actions.stacked {
+		flex-direction: column;
+	}
+	.own {
+		background: var(--surface);
+		border: 1px solid var(--line) !important;
+		color: inherit;
 	}
 	.actions button {
 		flex: 1;

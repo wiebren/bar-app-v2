@@ -27,6 +27,15 @@ export function invalidateSettings() {
 	settingsCache = null;
 }
 
+export async function getActiveParty(): Promise<RecordModel | null> {
+	const res = await pb.collection('parties').getList(1, 1, {
+		filter: 'ends > @now',
+		sort: '-created',
+		expand: 'host'
+	});
+	return res.items[0] ?? null;
+}
+
 export function displayName(u: { [key: string]: unknown }): string {
 	return [u.first_name, u.infix, u.last_name].filter(Boolean).join(' ') as string;
 }
