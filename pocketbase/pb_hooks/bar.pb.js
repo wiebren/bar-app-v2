@@ -215,11 +215,13 @@ routerAdd(
 		}
 		if (!Number.isInteger(cap) || cap < 0) throw new BadRequestError('Ongeldig maximum.');
 
+		// multiple parties may run at once, but one per host at a time
 		const now = new Date().toISOString().replace('T', ' ');
-		const active = e.app.findRecordsByFilter('parties', 'ends > {:now}', '-created', 1, 0, {
-			now: now
+		const own = e.app.findRecordsByFilter('parties', 'ends > {:now} && host = {:host}', '', 1, 0, {
+			now: now,
+			host: e.auth.id
 		});
-		if (active.length) throw new BadRequestError('Er is al een traktatie actief.');
+		if (own.length) throw new BadRequestError('Je hebt al een traktatie lopen.');
 
 		const party = new Record(e.app.findCollectionByNameOrId('parties'));
 		party.set('host', e.auth.id);
@@ -237,12 +239,13 @@ routerAdd(
 	'POST',
 	'/api/bar/party-stop',
 	(e) => {
-		const now = new Date().toISOString().replace('T', ' ');
-		const active = e.app.findRecordsByFilter('parties', 'ends > {:now}', '-created', 1, 0, {
-			now: now
-		});
-		if (!active.length) throw new BadRequestError('Geen actieve traktatie.');
-		const party = active[0];
+		const data = new DynamicModel({ party: '' });
+		e.bindBody(data);
+		if (!data.party) throw new BadRequestError('Geen traktatie opgegeven.');
+		const party = e.app.findRecordById('parties', data.party);
+		if (new Date(party.getString('ends').replace(' ', 'T')) <= new Date()) {
+			throw new BadRequestError('Deze traktatie is al voorbij.');
+		}
 		if (party.getString('host') !== e.auth.id && e.auth.getString('role') !== 'admin') {
 			throw new ForbiddenError('Alleen de trakterende of een beheerder kan stoppen.');
 		}

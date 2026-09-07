@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { pb, displayName, isAdmin, getActiveParty } from '$lib/pb';
+	import { pb, displayName, isAdmin, getActiveParties } from '$lib/pb';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
-	let party = $state<RecordModel | null>(null);
+	let parties = $state<RecordModel[]>([]);
 	let loaded = $state(false);
 	let message = $state('');
 	let capStr = $state('');
@@ -12,7 +12,7 @@
 	let error = $state('');
 
 	async function refresh() {
-		party = await getActiveParty();
+		parties = await getActiveParties();
 		loaded = true;
 	}
 
@@ -20,9 +20,12 @@
 		refresh();
 	});
 
-	const mayStop = $derived(
-		party !== null && (party.host === pb.authStore.record?.id || isAdmin())
-	);
+	// one party per host: the form hides while your own is running
+	const hostsOwn = $derived(parties.some((p) => p.host === pb.authStore.record?.id));
+
+	function mayStop(party: RecordModel): boolean {
+		return party.host === pb.authStore.record?.id || isAdmin();
+	}
 
 	async function start(e: SubmitEvent) {
 		e.preventDefault();
@@ -43,11 +46,11 @@
 		busy = false;
 	}
 
-	async function stop() {
+	async function stop(party: RecordModel) {
 		busy = true;
 		error = '';
 		try {
-			await pb.send('/api/bar/party-stop', { method: 'POST' });
+			await pb.send('/api/bar/party-stop', { method: 'POST', body: { party: party.id } });
 			await refresh();
 		} catch {
 			error = 'Traktatie stoppen mislukt.';
@@ -62,48 +65,49 @@
 
 {#if !loaded}
 	<!-- loading -->
-{:else if party}
-	<div class="card">
-		<p class="hostline">
-			<span class="gift"><Icon name="gift" size={22} /></span>
-			<strong>{displayName(party.expand?.host ?? {})} trakteert</strong>
-		</p>
-		{#if party.message}<p class="message">“{party.message}”</p>{/if}
-		<p class="detail">
-			Tot {new Date(party.ends).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}
-		</p>
-		<p class="detail">
-			{#if party.cap > 0}
-				{party.used ?? 0} van {party.cap} drankjes gebruikt
-			{:else}
-				{party.used ?? 0} drankjes gebruikt, geen maximum
-			{/if}
-		</p>
-	</div>
-	{#if mayStop}
-		<button class="stopbtn" onclick={stop} disabled={busy}>Stop traktatie</button>
-	{:else}
-		<p class="detail">Zolang de traktatie loopt kan er niemand anders trakteren.</p>
-	{/if}
 {:else}
-	<p class="intro">
-		Start een traktatie: iedereen kan drankjes op jouw rekening bestellen zolang die loopt.
-	</p>
-	<form class="card form" onsubmit={start}>
-		<label>
-			Bericht (optioneel)
-			<input bind:value={message} maxlength="100" placeholder="bijv. Max 2 drankjes p.p." />
-		</label>
-		<label>
-			Maximum aantal drankjes (leeg = geen maximum)
-			<input inputmode="numeric" pattern="[0-9]*" bind:value={capStr} placeholder="geen" />
-		</label>
-		<label>
-			Duur (uren)
-			<input type="number" bind:value={hours} min="1" max="24" step="1" required />
-		</label>
-		<button class="startbtn" disabled={busy}>Start traktatie</button>
-	</form>
+	{#each parties as party (party.id)}
+		<div class="card">
+			<p class="hostline">
+				<span class="gift"><Icon name="gift" size={22} /></span>
+				<strong>{displayName(party.expand?.host ?? {})} trakteert</strong>
+			</p>
+			{#if party.message}<p class="message">“{party.message}”</p>{/if}
+			<p class="detail">
+				Tot {new Date(party.ends).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}
+			</p>
+			<p class="detail">
+				{#if party.cap > 0}
+					{party.used ?? 0} van {party.cap} drankjes gebruikt
+				{:else}
+					{party.used ?? 0} drankjes gebruikt, geen maximum
+				{/if}
+			</p>
+			{#if mayStop(party)}
+				<button class="stopbtn" onclick={() => stop(party)} disabled={busy}>Stop traktatie</button>
+			{/if}
+		</div>
+	{/each}
+	{#if !hostsOwn}
+		<p class="intro">
+			Start een traktatie: iedereen kan drankjes op jouw rekening bestellen zolang die loopt.
+		</p>
+		<form class="card form" onsubmit={start}>
+			<label>
+				Bericht (optioneel)
+				<input bind:value={message} maxlength="100" placeholder="bijv. Max 2 drankjes p.p." />
+			</label>
+			<label>
+				Maximum aantal drankjes (leeg = geen maximum)
+				<input inputmode="numeric" pattern="[0-9]*" bind:value={capStr} placeholder="geen" />
+			</label>
+			<label>
+				Duur (uren)
+				<input type="number" bind:value={hours} min="1" max="24" step="1" required />
+			</label>
+			<button class="startbtn" disabled={busy}>Start traktatie</button>
+		</form>
+	{/if}
 {/if}
 
 <style>
@@ -178,6 +182,7 @@
 	.stopbtn {
 		background: var(--bad);
 		color: #fff;
+		margin-top: 0.6rem;
 	}
 	.startbtn:disabled,
 	.stopbtn:disabled {

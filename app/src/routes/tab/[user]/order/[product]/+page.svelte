@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { pb, displayName, euro, getSettings, getActiveParty } from '$lib/pb';
+	import { pb, displayName, euro, getSettings, getActiveParties } from '$lib/pb';
 	import { BRANDS } from '$lib/brands';
 	import BalanceBadge from '$lib/components/BalanceBadge.svelte';
 	import BrandMark from '$lib/components/BrandMark.svelte';
@@ -11,12 +11,12 @@
 
 	let tabUser = $state<RecordModel | null>(null);
 	let product = $state<RecordModel | null>(null);
-	let party = $state<RecordModel | null>(null);
+	let parties = $state<RecordModel[]>([]);
 	let qty = $state(0);
 	let yellow = $state(0);
 	let busy = $state(false);
 	let done = $state(false);
-	let paidByParty = $state(false);
+	let paidByHost = $state('');
 	let error = $state('');
 
 	$effect(() => {
@@ -25,21 +25,26 @@
 			yellow = (await getSettings()).yellow_threshold ?? 0;
 			tabUser = await pb.collection('users').getOne(user!);
 			product = await pb.collection('products').getOne(productId!);
-			party = await getActiveParty();
+			parties = await getActiveParties();
 		})();
 	});
 
 	const total = $derived(qty * (product?.price ?? 0));
 	const newBalance = $derived((tabUser?.balance ?? 0) - total);
-	// party option: not on the host's own tab, and only while the cap allows it
-	const partyOffer = $derived(
-		party && tabUser && party.host !== tabUser.id && (!party.cap || (party.used ?? 0) + qty <= party.cap)
-			? party
-			: null
+	// party options: not on the host's own tab, and only while the cap allows it
+	const partyOffers = $derived(
+		tabUser
+			? parties.filter(
+					(p) => p.host !== tabUser!.id && (!p.cap || (p.used ?? 0) + qty <= p.cap)
+				)
+			: []
 	);
-	const partyHostName = $derived(partyOffer ? displayName(partyOffer.expand?.host ?? {}) : '');
 
-	async function confirm(asParty = false) {
+	function hostName(party: RecordModel): string {
+		return displayName(party.expand?.host ?? {});
+	}
+
+	async function confirm(party: RecordModel | null = null) {
 		busy = true;
 		error = '';
 		try {
@@ -49,10 +54,10 @@
 					user: tabUser!.id,
 					product: product!.id,
 					qty,
-					...(asParty ? { party: party!.id } : {})
+					...(party ? { party: party.id } : {})
 				}
 			});
-			paidByParty = asParty;
+			paidByHost = party ? hostName(party) : '';
 			done = true;
 			setTimeout(() => (location.href = `/tab/${tabUser!.id}`), 2000);
 		} catch {
@@ -67,8 +72,8 @@
 		<div class="donebox">
 			<span class="check"><Icon name="check" size={28} /></span>
 			<h1>Bestelling verwerkt</h1>
-			{#if paidByParty}
-				<p>Op rekening van <strong>{partyHostName}</strong> — proost! 🎉</p>
+			{#if paidByHost}
+				<p>Op rekening van <strong>{paidByHost}</strong> — proost! 🎉</p>
 			{:else}
 				<p>Nieuw saldo: <BalanceBadge balance={newBalance} yellowThreshold={yellow} /></p>
 			{/if}
@@ -119,17 +124,21 @@
 				</span>
 			</div>
 		</div>
-		{#if partyOffer}
+		{#if partyOffers.length}
 			<div class="partybox">
-				<p class="partyline">
-					<span class="gift"><Icon name="gift" size={20} /></span>
-					<strong>{partyHostName} trakteert{partyOffer.message ? `: ${partyOffer.message}` : '!'}</strong>
-				</p>
 				<div class="actions stacked">
-					<button class="ok" onclick={() => confirm(true)} disabled={busy}>
-						Op rekening van {partyHostName}
-					</button>
-					<button class="own" onclick={() => confirm(false)} disabled={busy}>
+					{#each partyOffers as offer (offer.id)}
+						<div class="offer">
+							<p class="partyline">
+								<span class="gift"><Icon name="gift" size={20} /></span>
+								<strong>{hostName(offer)} trakteert{offer.message ? `: ${offer.message}` : '!'}</strong>
+							</p>
+							<button class="ok" onclick={() => confirm(offer)} disabled={busy}>
+								Op rekening van {hostName(offer)}
+							</button>
+						</div>
+					{/each}
+					<button class="own" onclick={() => confirm()} disabled={busy}>
 						Op eigen rekening
 					</button>
 					<button class="back" onclick={() => (qty = 0)} disabled={busy}>Terug</button>
@@ -137,7 +146,7 @@
 			</div>
 		{:else}
 			<div class="actions">
-				<button class="ok" onclick={() => confirm(false)} disabled={busy}>Bevestigen</button>
+				<button class="ok" onclick={() => confirm()} disabled={busy}>Bevestigen</button>
 				<button class="back" onclick={() => (qty = 0)} disabled={busy}>Terug</button>
 			</div>
 		{/if}
@@ -270,7 +279,17 @@
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		margin: 0 0 0.8rem;
+		margin: 0 0 0.5rem;
+	}
+	.offer {
+		display: flex;
+		flex-direction: column;
+	}
+	.offer .ok {
+		width: 100%;
+	}
+	.offer + .offer {
+		margin-top: 0.3rem;
 	}
 	.gift {
 		display: inline-flex;

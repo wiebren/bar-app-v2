@@ -27,13 +27,12 @@ export function invalidateSettings() {
 	settingsCache = null;
 }
 
-export async function getActiveParty(): Promise<RecordModel | null> {
-	const res = await pb.collection('parties').getList(1, 1, {
+export async function getActiveParties(): Promise<RecordModel[]> {
+	return await pb.collection('parties').getFullList({
 		filter: 'ends > @now',
-		sort: '-created',
+		sort: 'created',
 		expand: 'host'
 	});
-	return res.items[0] ?? null;
 }
 
 export function displayName(u: { [key: string]: unknown }): string {
