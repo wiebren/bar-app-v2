@@ -54,5 +54,12 @@ export const BRANDS: Record<string, Brand> = {
 		fg: '#ffffff',
 		initials: 'F',
 		logo: '/brands/fanta.svg'
+	},
+	radler: {
+		label: 'Radler',
+		color: '#2470ad', // sampled from the script
+		fg: '#ffffff',
+		initials: 'R',
+		logo: '/brands/radler.png'
 	}
 };
