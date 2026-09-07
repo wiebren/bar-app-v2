@@ -11,7 +11,6 @@
 	const sections = [
 		{ href: '/admin/users', label: 'Rekeningen' },
 		{ href: '/admin/products', label: 'Producten' },
-		{ href: '/admin/payments', label: 'Betalingshistorie' },
 		{ href: '/admin/sales', label: 'Verkoop & rapporten' },
 		{ href: '/admin/mail', label: 'Saldo-mails' },
 		{ href: '/admin/settings', label: 'Instellingen' }

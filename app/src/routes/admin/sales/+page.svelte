@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { pb, euro } from '$lib/pb';
 	import { downloadCsv } from '$lib/csv';
+	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
 	// per-product report
@@ -166,14 +167,24 @@
 
 <h2>Historie</h2>
 <div class="links">
-	<a class="btnlink" href="/admin/sales/orders">Bestelhistorie</a>
-	<a class="btnlink" href="/admin/sales/transactions">Voorraadtransacties</a>
+	<a class="action" href="/admin/sales/orders">
+		<Icon name="history" size={24} /> Bestelhistorie
+	</a>
+	<a class="action" href="/admin/payments">
+		<Icon name="receipt" size={24} /> Betalingshistorie
+	</a>
+	<a class="action" href="/admin/sales/transactions">
+		<Icon name="crate" size={24} /> Voorraadtransacties
+	</a>
 </div>
 
 <style>
 	.links {
-		display: flex;
-		gap: 0.7rem;
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 0.6rem;
+	}
+	.links > a:last-child {
+		grid-column: 1 / -1;
 	}
 </style>
