@@ -61,6 +61,58 @@ function sendBalanceMail(app, settings, prefix, user) {
 	return true;
 }
 
+/** Send one mail to all active admins with an email, as joint recipients. */
+function sendAdminMail(app, subject, text) {
+	const admins = app.findRecordsByFilter(
+		'users',
+		"role = 'admin' && active = true && email != ''",
+		'last_name',
+		0,
+		0
+	);
+	if (!admins.length) return false;
+
+	const settings = getSettings(app);
+	const message = new MailerMessage({
+		from: {
+			address: settings.getString('sender_address') || app.settings().meta.senderAddress,
+			name: settings.getString('app_title') || 'Bar-app'
+		},
+		to: admins.map((a) => ({ address: a.email() })),
+		subject,
+		text
+	});
+	app.newMailClient().send(message);
+	return true;
+}
+
+/** Mail the admins that a product's stock dropped under its notify level. */
+function sendLowStockMail(app, info) {
+	return sendAdminMail(
+		app,
+		`Voorraad laag: ${info.name}`,
+		`Beste barcommissie,\n\n` +
+			`De voorraad van ${info.name} is gezakt naar ${info.stock} (meldgrens: ${info.level}).\n\n` +
+			`Tijd om bij te bestellen.`
+	);
+}
+
+/**
+ * Mail the admins that part of a product's stock has been on the shelf
+ * for over 3 months (stock exceeds what was added in that period).
+ */
+function sendStockAgeMail(app, info) {
+	return sendAdminMail(
+		app,
+		`Houdbaarheid: ${info.name}`,
+		`Beste barcommissie,\n\n` +
+			`Van ${info.name} liggen er ${info.total} op voorraad, terwijl er de afgelopen 3 maanden ` +
+			`${info.added} zijn bijgeboekt.\n\n` +
+			`Minstens ${info.total - info.added} stuks liggen er dus al langer dan 3 maanden — ` +
+			`controleer de houdbaarheidsdatum.`
+	);
+}
+
 /** Active users with an email in the "red" (balance < 0) or "yellow" (0..threshold) group. */
 function findDebtorGroup(app, group) {
 	let filter;
@@ -82,5 +134,8 @@ module.exports = {
 	fullName,
 	round2,
 	sendBalanceMail,
+	sendAdminMail,
+	sendLowStockMail,
+	sendStockAgeMail,
 	findDebtorGroup
 };

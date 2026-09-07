@@ -20,6 +20,7 @@ routerAdd(
 
 		let result = {};
 		let crossedRed = false;
+		let lowStock = null; // { name, stock, level } when the notify level was crossed
 		let chargedUser = data.user;
 
 		e.app.runInTransaction((tx) => {
@@ -68,6 +69,20 @@ routerAdd(
 				entry.set('order', order.id);
 				entry.set('actor', e.auth.id);
 				tx.save(entry);
+
+				// low-stock alert: crossing-only, like the red alert below
+				const level = product.getInt('notify_level');
+				if (level > 0) {
+					const row = new DynamicModel({ total: 0 });
+					tx.db()
+						.newQuery('SELECT COALESCE(SUM(qty), 0) AS total FROM stock_entries WHERE product = {:p}')
+						.bind({ p: product.id })
+						.one(row);
+					const newStock = Number(row.total); // sale entry included
+					if (newStock < level && newStock + qty >= level) {
+						lowStock = { name: product.getString('name'), stock: newStock, level };
+					}
+				}
 			}
 
 			tabUser.set('balance', newBalance);
@@ -87,6 +102,14 @@ routerAdd(
 				utils.sendBalanceMail(e.app, settings, 'red', tabUser);
 			} catch (err) {
 				console.log('red-alert mail failed:', err);
+			}
+		}
+
+		if (lowStock) {
+			try {
+				utils.sendLowStockMail(e.app, lowStock);
+			} catch (err) {
+				console.log('low-stock mail failed:', err);
 			}
 		}
 
@@ -164,7 +187,8 @@ routerAdd(
 	'POST',
 	'/api/bar/stock-count',
 	(e) => {
-		require(`${__hooks}/bar_utils.js`).requireActiveAdmin(e);
+		const utils = require(`${__hooks}/bar_utils.js`);
+		utils.requireActiveAdmin(e);
 
 		const data = new DynamicModel({ product: '', counted: 0 });
 		e.bindBody(data);
@@ -172,6 +196,7 @@ routerAdd(
 		if (!isFinite(counted) || counted < 0) throw new BadRequestError('Ongeldige telling.');
 
 		let result = {};
+		let lowStock = null;
 		e.app.runInTransaction((tx) => {
 			const product = tx.findRecordById('products', data.product);
 			const row = new DynamicModel({ total: 0 });
@@ -190,8 +215,21 @@ routerAdd(
 				entry.set('actor', e.auth.id);
 				tx.save(entry);
 			}
+
+			const level = product.getInt('notify_level');
+			if (level > 0 && Number(row.total) >= level && counted < level) {
+				lowStock = { name: product.getString('name'), stock: counted, level };
+			}
 			result = { previous: Number(row.total), counted, delta };
 		});
+
+		if (lowStock) {
+			try {
+				utils.sendLowStockMail(e.app, lowStock);
+			} catch (err) {
+				console.log('low-stock mail failed:', err);
+			}
+		}
 		return e.json(200, result);
 	},
 	$apis.requireAuth()
@@ -298,9 +336,46 @@ routerAdd(
 
 // ---------------------------------------------------------------------------
 // 5.5 Daily digest: each user with orders today gets a summary mail.
+//     On the 1st of the month it also runs the shelf-life check.
 // ---------------------------------------------------------------------------
 cronAdd('daily-digest', '30 21 * * *', () => {
 	const utils = require(`${__hooks}/bar_utils.js`);
+
+	// Monthly shelf-life check (1st only): stock above what was added the
+	// past 3 months means the surplus predates that window (FIFO) — mail
+	// the admins one expiry warning per product. Runs regardless of the
+	// digest toggle; that switch only covers the user digest below.
+	if (new Date().getUTCDate() === 1) {
+		const since = new Date();
+		since.setUTCMonth(since.getUTCMonth() - 3);
+		const sinceStr = since.toISOString().replace('T', ' ');
+
+		const rows = arrayOf(new DynamicModel({ product: '', total: 0, added: 0 }));
+		$app
+			.db()
+			.newQuery(
+				`SELECT product,
+				        COALESCE(SUM(qty), 0) AS total,
+				        COALESCE(SUM(CASE WHEN qty > 0 AND date >= {:since} THEN qty ELSE 0 END), 0) AS added
+				 FROM stock_entries GROUP BY product`
+			)
+			.bind({ since: sinceStr })
+			.all(rows);
+
+		for (const row of rows) {
+			try {
+				const total = Number(row.total);
+				const added = Number(row.added);
+				if (total <= 0 || total <= added) continue;
+				const product = $app.findRecordById('products', row.product);
+				if (!product.getBool('stock_tracked')) continue;
+				utils.sendStockAgeMail($app, { name: product.getString('name'), total, added });
+			} catch (err) {
+				console.log('stock-age mail failed for', row.product, err);
+			}
+		}
+	}
+
 	const settings = utils.getSettings($app);
 	if (!settings.getBool('digest_enabled')) return;
 

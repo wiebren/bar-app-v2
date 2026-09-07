@@ -8,7 +8,14 @@
 	let products = $state<RecordModel[]>([]);
 	let editing = $state<RecordModel | null>(null);
 	let adding = $state(false);
-	let form = $state({ name: '', price: 0, sellable: true, stock_tracked: true, brand: '' });
+	let form = $state({
+		name: '',
+		price: 0,
+		sellable: true,
+		stock_tracked: true,
+		brand: '',
+		notify_level: 0
+	});
 	// 'first' or the id of the product this one comes after
 	let placement = $state('first');
 	let busy = $state(false);
@@ -38,7 +45,7 @@
 	function startAdd() {
 		adding = true;
 		editing = null;
-		form = { name: '', price: 0, sellable: true, stock_tracked: true, brand: '' };
+		form = { name: '', price: 0, sellable: true, stock_tracked: true, brand: '', notify_level: 0 };
 		placement = products.length ? products[products.length - 1].id : 'first';
 		msg = '';
 		error = '';
@@ -52,7 +59,8 @@
 			price: p.price,
 			sellable: !!p.sellable,
 			stock_tracked: !!p.stock_tracked,
-			brand: p.brand ?? ''
+			brand: p.brand ?? '',
+			notify_level: p.notify_level ?? 0
 		};
 		const idx = products.findIndex((x) => x.id === p.id);
 		placement = idx <= 0 ? 'first' : products[idx - 1].id;
@@ -139,6 +147,13 @@
 			<label class="check"><input type="checkbox" bind:checked={form.sellable} />Verkrijgbaar op de tap</label>
 			<label class="check"><input type="checkbox" bind:checked={form.stock_tracked} />Voorraad bijhouden</label>
 		</div>
+		{#if form.stock_tracked}
+			<div class="row">
+				<label>Mail beheerders bij voorraad onder
+					<input type="number" bind:value={form.notify_level} min="0" step="1" placeholder="0 = geen melding" />
+				</label>
+			</div>
+		{/if}
 		<div class="row">
 			<button class="btn" disabled={busy}>Opslaan</button>
 			<button class="btn danger" type="button" onclick={() => { adding = false; editing = null; }}>
