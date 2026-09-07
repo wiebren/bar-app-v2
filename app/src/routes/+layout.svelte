@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/state';
+	import { page, updated } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { pb, isAdmin, getSettings } from '$lib/pb';
 	import Icon from '$lib/components/Icon.svelte';
@@ -29,7 +29,21 @@
 		pb.authStore.clear();
 		await goto('/login');
 	}
+
+	// iOS keeps a docked PWA resident in memory, so reopening it resumes stale
+	// code instead of reloading. On resume, fetch _app/version.json and reload
+	// if a new build was deployed.
+	async function reloadIfStale() {
+		if (document.visibilityState !== 'visible') return;
+		try {
+			if (await updated.check()) location.reload();
+		} catch {
+			// offline or version.json unreachable — stay on the running build
+		}
+	}
 </script>
+
+<svelte:document onvisibilitychange={reloadIfStale} />
 
 <svelte:head>
 	<title>{title}</title>
