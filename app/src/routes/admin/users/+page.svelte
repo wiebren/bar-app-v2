@@ -163,7 +163,7 @@
 		<div class="row actions">
 			<a class="btnlink" href="/admin/topup?user={editing.id}">Saldo bijschrijven</a>
 			<a class="btnlink" href="/admin/payments?user={editing.id}">Betaalgeschiedenis</a>
-			<a class="btnlink" href="/admin/sales?user={editing.id}">Bestelgeschiedenis</a>
+			<a class="btnlink" href="/admin/sales/orders?user={editing.id}">Bestelgeschiedenis</a>
 		</div>
 		{#if !editing.active}
 			<button class="btn danger delete" onclick={() => remove(editing!)}>
@@ -259,17 +259,6 @@
 		gap: 0.7rem;
 		flex-wrap: wrap;
 		margin-bottom: 1.1rem;
-	}
-	.btnlink {
-		padding: 0.7rem 1.3rem;
-		font-size: 1rem;
-		font-weight: 600;
-		text-decoration: none;
-		border: 1px solid var(--line);
-		border-radius: var(--radius-s);
-		background: var(--surface);
-		color: inherit;
-		box-shadow: var(--shadow);
 	}
 	.delete {
 		margin-top: 0.4rem;

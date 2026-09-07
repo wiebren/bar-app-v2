@@ -1,10 +1,8 @@
 <script lang="ts">
-	import { pb, euro, displayName } from '$lib/pb';
+	import { pb, euro } from '$lib/pb';
 	import { BRANDS } from '$lib/brands';
 	import BrandMark from '$lib/components/BrandMark.svelte';
 	import type { RecordModel } from 'pocketbase';
-
-	const typeLabel: Record<string, string> = { purchase: 'inkoop', sale: 'verkoop', count: 'telling' };
 
 	let products = $state<RecordModel[]>([]);
 	let editing = $state<RecordModel | null>(null);
@@ -15,11 +13,17 @@
 	let busy = $state(false);
 	let msg = $state('');
 	let error = $state('');
-	let transactions = $state<RecordModel[]>([]);
-	let txTotal = $state(0);
+	// current stock per product id, summed from the ledger
+	let stock = $state<Record<string, number>>({});
 
 	async function load() {
 		products = await pb.collection('products').getFullList({ sort: 'sort_order,name' });
+		const entries = await pb.collection('stock_entries').getFullList({ fields: 'product,qty' });
+		const sums: Record<string, number> = {};
+		for (const s of entries) {
+			sums[s.product] = (sums[s.product] ?? 0) + (s.qty ?? 0);
+		}
+		stock = sums;
 	}
 	$effect(() => {
 		load();
@@ -53,19 +57,6 @@
 		placement = idx <= 0 ? 'first' : products[idx - 1].id;
 		msg = '';
 		error = '';
-		transactions = [];
-		txTotal = 0;
-		if (p.stock_tracked) loadTransactions(p);
-	}
-
-	async function loadTransactions(p: RecordModel) {
-		const res = await pb.collection('stock_entries').getList(1, 100, {
-			filter: `product = "${p.id}"`,
-			sort: '-date',
-			expand: 'actor'
-		});
-		transactions = res.items;
-		txTotal = res.totalItems;
 	}
 
 	function rowKey(e: KeyboardEvent, p: RecordModel) {
@@ -156,32 +147,12 @@
 	</form>
 
 	{#if editing?.stock_tracked}
-		<h2>Voorraad</h2>
+		<h2>Voorraad ({stock[editing.id] ?? 0})</h2>
 		<div class="row stockbtns">
 			<a class="btnlink" href="/admin/stock/add?product={editing.id}">Inkoop boeken</a>
 			<a class="btnlink" href="/admin/stock/count?product={editing.id}">Voorraad tellen</a>
+			<a class="btnlink" href="/admin/sales/transactions?product={editing.id}">Transacties</a>
 		</div>
-
-		{#if transactions.length}
-			<h2>Transacties{#if txTotal > transactions.length} (laatste {transactions.length}){/if}</h2>
-			<div class="tablewrap">
-				<table>
-					<thead><tr><th>Datum</th><th>Type</th><th class="num">Aantal</th></tr></thead>
-					<tbody>
-						{#each transactions as t (t.id)}
-							<tr>
-								<td>{new Date(t.date).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit' })}</td>
-								<td>
-									{typeLabel[t.type] ?? t.type}
-									<span class="by">door {displayName(t.expand?.actor ?? {})}</span>
-								</td>
-								<td class="num">{t.qty}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-		{/if}
 	{/if}
 
 	{#if error}<p class="error">{error}</p>{/if}
@@ -214,7 +185,7 @@
 							{#if !p.sellable}<span class="chip off">niet op de tap</span>{/if}
 						</td>
 						<td>{euro(p.price)}</td>
-						<td>{p.stock_tracked ? '✔' : '—'}</td>
+						<td>{p.stock_tracked ? (stock[p.id] ?? 0) : '—'}</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -271,16 +242,5 @@
 		display: flex;
 		gap: 0.7rem;
 		flex-wrap: wrap;
-	}
-	.btnlink {
-		padding: 0.7rem 1.3rem;
-		font-size: 1rem;
-		font-weight: 600;
-		text-decoration: none;
-		border: 1px solid var(--line);
-		border-radius: var(--radius-s);
-		background: var(--surface);
-		color: inherit;
-		box-shadow: var(--shadow);
 	}
 </style>

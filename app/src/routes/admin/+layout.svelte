@@ -104,6 +104,18 @@
 	:global(button.btn.danger) {
 		background: var(--bad);
 	}
+	:global(a.btnlink) {
+		display: inline-block;
+		padding: 0.7rem 1.3rem;
+		font-size: 1rem;
+		font-weight: 600;
+		text-decoration: none;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-s);
+		background: var(--surface);
+		color: inherit;
+		box-shadow: var(--shadow);
+	}
 	:global(button.btn:disabled) {
 		opacity: 0.5;
 	}
