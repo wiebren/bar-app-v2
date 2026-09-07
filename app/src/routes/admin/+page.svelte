@@ -1,9 +1,14 @@
 <script lang="ts">
 	import { pb, euro } from '$lib/pb';
+	import Icon from '$lib/components/Icon.svelte';
+
+	const actions = [
+		{ href: '/admin/topup', label: 'Saldo bijschrijven', icon: 'euro' },
+		{ href: '/admin/stock/add', label: 'Inkoop boeken', icon: 'plus' },
+		{ href: '/admin/stock/count', label: 'Voorraad tellen', icon: 'crate' }
+	];
 
 	const sections = [
-		{ href: '/admin/topup', label: 'Saldo bijschrijven' },
-		{ href: '/admin/stock', label: 'Voorraad' },
 		{ href: '/admin/users', label: 'Rekeningen' },
 		{ href: '/admin/products', label: 'Producten' },
 		{ href: '/admin/payments', label: 'Betalingshistorie' },
@@ -13,7 +18,6 @@
 	];
 
 	let figures = $state<{ label: string; value: string }[]>([]);
-	let turnover = $state<[string, number][]>([]);
 
 	$effect(() => {
 		(async () => {
@@ -28,22 +32,20 @@
 					value: `${users.length} (${users.filter((u) => u.active).length})`
 				}
 			];
-
-			// turnover per fiscal year (September–August), like the old financial overview
-			const orders = await pb.collection('orders').getFullList({ fields: 'created,total' });
-			const byYear = new Map<string, number>();
-			for (const o of orders) {
-				const d = new Date(o.created);
-				const startYear = d.getMonth() + 1 < 9 ? d.getFullYear() - 1 : d.getFullYear();
-				const key = `${startYear} - ${startYear + 1}`;
-				byYear.set(key, (byYear.get(key) ?? 0) + (o.total ?? 0));
-			}
-			turnover = [...byYear.entries()].sort((a, b) => b[0].localeCompare(a[0]));
 		})();
 	});
 </script>
 
 <h1>Beheer</h1>
+
+<div class="actions">
+	{#each actions as a (a.href)}
+		<a class="action" href={a.href}>
+			<Icon name={a.icon} size={26} />
+			{a.label}
+		</a>
+	{/each}
+</div>
 
 <div class="figures">
 	{#each figures as f (f.label)}
@@ -54,19 +56,6 @@
 	{/each}
 </div>
 
-{#if turnover.length}
-	<div class="tablewrap">
-		<table>
-			<thead><tr><th>Boekjaar (sep–aug)</th><th class="num">Omzet</th></tr></thead>
-			<tbody>
-				{#each turnover as [year, total] (year)}
-					<tr><td>{year}</td><td class="num">{euro(total)}</td></tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
-{/if}
-
 <div class="tiles">
 	{#each sections as s (s.href)}
 		<a class="tile" href={s.href}>{s.label}</a>
@@ -74,6 +63,34 @@
 </div>
 
 <style>
+	.actions {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 0.6rem;
+		margin-bottom: 1rem;
+	}
+	.action {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.6rem;
+		padding: 1.1rem 1rem;
+		font-size: 1.05rem;
+		font-weight: 600;
+		text-decoration: none;
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		background: var(--surface);
+		color: inherit;
+		box-shadow: var(--shadow);
+		transition: transform 0.08s ease;
+	}
+	.action:first-child {
+		grid-column: 1 / -1;
+	}
+	.action:active {
+		transform: scale(0.97);
+	}
 	.figures {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));

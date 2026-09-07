@@ -27,7 +27,7 @@
 
 	$effect(() => {
 		if (page.params.mode !== 'add' && page.params.mode !== 'count') {
-			goto('/admin/stock');
+			goto('/admin');
 			return;
 		}
 		// ?product=… (from the product edit screen) skips the picker
@@ -110,7 +110,7 @@
 		</p>
 		<div class="actions">
 			<button class="ok" onclick={backToProducts}>Volgend product</button>
-			<a class="back" href="/admin/stock">Terug</a>
+			<a class="back" href="/admin">Terug</a>
 		</div>
 	</div>
 {:else if !product}
@@ -129,7 +129,7 @@
 			</button>
 		{/each}
 	</div>
-	<a class="cancelbtn" href="/admin/stock">Annuleren</a>
+	<a class="cancelbtn" href="/admin">Annuleren</a>
 {:else}
 	<h1>{title}</h1>
 	<div

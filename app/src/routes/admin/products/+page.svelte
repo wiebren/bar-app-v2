@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { pb, euro } from '$lib/pb';
+	import { pb, euro, displayName } from '$lib/pb';
 	import { BRANDS } from '$lib/brands';
 	import BrandMark from '$lib/components/BrandMark.svelte';
 	import type { RecordModel } from 'pocketbase';
+
+	const typeLabel: Record<string, string> = { purchase: 'inkoop', sale: 'verkoop', count: 'telling' };
 
 	let products = $state<RecordModel[]>([]);
 	let editing = $state<RecordModel | null>(null);
@@ -13,6 +15,8 @@
 	let busy = $state(false);
 	let msg = $state('');
 	let error = $state('');
+	let transactions = $state<RecordModel[]>([]);
+	let txTotal = $state(0);
 
 	async function load() {
 		products = await pb.collection('products').getFullList({ sort: 'sort_order,name' });
@@ -49,6 +53,19 @@
 		placement = idx <= 0 ? 'first' : products[idx - 1].id;
 		msg = '';
 		error = '';
+		transactions = [];
+		txTotal = 0;
+		if (p.stock_tracked) loadTransactions(p);
+	}
+
+	async function loadTransactions(p: RecordModel) {
+		const res = await pb.collection('stock_entries').getList(1, 100, {
+			filter: `product = "${p.id}"`,
+			sort: '-date',
+			expand: 'actor'
+		});
+		transactions = res.items;
+		txTotal = res.totalItems;
 	}
 
 	function rowKey(e: KeyboardEvent, p: RecordModel) {
@@ -144,6 +161,27 @@
 			<a class="btnlink" href="/admin/stock/add?product={editing.id}">Inkoop boeken</a>
 			<a class="btnlink" href="/admin/stock/count?product={editing.id}">Voorraad tellen</a>
 		</div>
+
+		{#if transactions.length}
+			<h2>Transacties{#if txTotal > transactions.length} (laatste {transactions.length}){/if}</h2>
+			<div class="tablewrap">
+				<table>
+					<thead><tr><th>Datum</th><th>Type</th><th class="num">Aantal</th></tr></thead>
+					<tbody>
+						{#each transactions as t (t.id)}
+							<tr>
+								<td>{new Date(t.date).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit' })}</td>
+								<td>
+									{typeLabel[t.type] ?? t.type}
+									<span class="by">door {displayName(t.expand?.actor ?? {})}</span>
+								</td>
+								<td class="num">{t.qty}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
 	{/if}
 
 	{#if error}<p class="error">{error}</p>{/if}
