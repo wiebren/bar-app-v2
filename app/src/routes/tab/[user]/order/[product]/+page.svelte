@@ -2,10 +2,11 @@
 	import { page } from '$app/state';
 	import { pb, displayName, euro, getSettings } from '$lib/pb';
 	import BalanceBadge from '$lib/components/BalanceBadge.svelte';
+	import BrandMark from '$lib/components/BrandMark.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
-	const QUANTITIES = [1, 2, 3, 4, 5, 6, 24];
+	const QUANTITIES = [1, 2, 3, 4, 5, 6];
 
 	let tabUser = $state<RecordModel | null>(null);
 	let product = $state<RecordModel | null>(null);
@@ -57,13 +58,19 @@
 			{#each QUANTITIES as n (n)}
 				<button onclick={() => (qty = n)}>{n}</button>
 			{/each}
+			<button class="crate" onclick={() => (qty = 24)}>
+				<Icon name="crate" size={26} /> 24
+			</button>
 		</div>
 		<a class="cancel" href="/tab/{tabUser.id}">Annuleren</a>
 	{:else}
 		<h1>Bevestig bestelling</h1>
 		<div class="card">
 			<p class="line">
-				{qty}× {product.name}
+				<span class="item">
+					<BrandMark brand={product.brand} height={1.6} />
+					{qty}× {product.name}
+				</span>
 				<strong>{euro(total)}</strong>
 			</p>
 			<p class="who">op rekening van {displayName(tabUser)}</p>
@@ -90,12 +97,12 @@
 <style>
 	.qty {
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
+		grid-template-columns: repeat(3, 1fr);
 		gap: 0.6rem;
 		margin-bottom: 1.2rem;
 	}
 	.qty button {
-		aspect-ratio: 1.15;
+		aspect-ratio: 1.6;
 		font-size: 1.4rem;
 		font-weight: 700;
 		font-family: inherit;
@@ -105,6 +112,15 @@
 		color: inherit;
 		cursor: pointer;
 		box-shadow: var(--shadow);
+	}
+	.qty .crate {
+		grid-column: 1 / -1;
+		aspect-ratio: auto;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.6rem;
+		padding: 1rem 0;
 	}
 	.qty button:active {
 		transform: scale(0.95);
@@ -123,8 +139,15 @@
 	.line {
 		display: flex;
 		justify-content: space-between;
+		align-items: center;
+		gap: 0.5rem;
 		font-size: 1.15rem;
 		margin: 0;
+	}
+	.item {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
 	}
 	.who {
 		color: var(--muted);

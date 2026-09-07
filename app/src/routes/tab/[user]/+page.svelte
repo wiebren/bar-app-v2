@@ -3,6 +3,7 @@
 	import { pb, displayName, euro, getSettings } from '$lib/pb';
 	import { BRANDS } from '$lib/brands';
 	import BalanceBadge from '$lib/components/BalanceBadge.svelte';
+	import BrandMark from '$lib/components/BrandMark.svelte';
 	import type { RecordModel } from 'pocketbase';
 
 	let tabUser = $state<RecordModel | null>(null);
@@ -55,14 +56,7 @@
 					<span class="name">{p.name}</span>
 					<span class="price">{euro(p.price)}</span>
 				</span>
-				{#if brand}
-					<span
-						class="brandchip"
-						style:background={brand.color}
-						style:color={brand.fg}
-						title={brand.label}>{brand.initials}</span
-					>
-				{/if}
+				<BrandMark brand={p.brand} />
 			</a>
 		{/each}
 	</div>
@@ -131,18 +125,6 @@
 		flex-direction: column;
 		gap: 0.15rem;
 		min-width: 0;
-	}
-	.brandchip {
-		flex-shrink: 0;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 2rem;
-		height: 2rem;
-		border-radius: 999px;
-		font-size: 0.72rem;
-		font-weight: 800;
-		letter-spacing: 0.02em;
 	}
 	.product:active {
 		transform: scale(0.97);

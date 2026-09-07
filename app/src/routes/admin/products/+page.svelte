@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { pb, euro } from '$lib/pb';
 	import { BRANDS } from '$lib/brands';
+	import BrandMark from '$lib/components/BrandMark.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
@@ -119,19 +120,11 @@
 		</thead>
 		<tbody>
 			{#each products as p (p.id)}
-				{@const brand = BRANDS[p.brand]}
 				<tr class:inactive={!p.sellable}>
 					<td>{p.sort_order}</td>
-					<td>
+					<td class="prod">
 						{p.name}
-						{#if brand}
-							<span
-								class="brandchip"
-								style:background={brand.color}
-								style:color={brand.fg}
-								title={brand.label}>{brand.initials}</span
-							>
-						{/if}
+						<BrandMark brand={p.brand} height={1.4} />
 					</td>
 					<td>{euro(p.price)}</td>
 					<td>{p.sellable ? '✔' : '—'}</td>
@@ -158,15 +151,9 @@
 		width: 2.2rem;
 		height: 2.2rem;
 	}
-	.brandchip {
-		display: inline-flex;
+	.prod {
+		display: flex;
 		align-items: center;
-		justify-content: center;
-		width: 1.5rem;
-		height: 1.5rem;
-		border-radius: 999px;
-		font-size: 0.62rem;
-		font-weight: 800;
-		vertical-align: middle;
+		gap: 0.45rem;
 	}
 </style>
