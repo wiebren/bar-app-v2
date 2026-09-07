@@ -27,6 +27,13 @@ export const BRANDS: Record<string, Brand> = {
 		initials: 'A',
 		logo: '/brands/amstel.png'
 	},
+	amstel_radler: {
+		label: 'Amstel Radler',
+		color: '#1e62ae', // sampled from the Radler script
+		fg: '#ffffff',
+		initials: 'AR',
+		logo: '/brands/amstel_radler.jpg'
+	},
 	lidl_cola: {
 		label: 'Lidl Cola',
 		color: '#0050aa',
@@ -41,5 +48,11 @@ export const BRANDS: Record<string, Brand> = {
 		initials: 'CC',
 		logo: '/brands/coca_cola.svg'
 	},
-	sinas: { label: 'Sinas', color: '#f97316', fg: '#ffffff', initials: 'S' }
+	fanta: {
+		label: 'Fanta',
+		color: '#ff8300', // sampled from the logo's orange disc
+		fg: '#ffffff',
+		initials: 'F',
+		logo: '/brands/fanta.svg'
+	}
 };
