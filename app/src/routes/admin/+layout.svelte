@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { page } from '$app/state';
 	import { isAdmin } from '$lib/pb';
-	import Icon from '$lib/components/Icon.svelte';
 	import { onMount } from 'svelte';
 
 	let { children } = $props();
@@ -15,30 +13,10 @@
 </script>
 
 {#if ok}
-	{#if page.url.pathname !== '/admin'}
-		<nav class="crumbs">
-			<a href="/admin"><Icon name="back" size={16} /> Beheer</a>
-		</nav>
-	{/if}
 	{@render children()}
 {/if}
 
 <style>
-	.crumbs {
-		margin-bottom: 0.9rem;
-		font-size: 0.92rem;
-	}
-	.crumbs a {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.25rem;
-		color: var(--muted);
-		text-decoration: none;
-	}
-	.crumbs a:hover {
-		color: var(--ink);
-	}
-
 	/* shared admin styling, used by every /admin page */
 	:global(form.panel),
 	:global(div.panel) {
