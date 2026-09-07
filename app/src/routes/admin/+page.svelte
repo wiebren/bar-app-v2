@@ -57,10 +57,10 @@
 {#if turnover.length}
 	<div class="tablewrap">
 		<table>
-			<thead><tr><th>Boekjaar (sep–aug)</th><th>Omzet</th></tr></thead>
+			<thead><tr><th>Boekjaar (sep–aug)</th><th class="num">Omzet</th></tr></thead>
 			<tbody>
 				{#each turnover as [year, total] (year)}
-					<tr><td>{year}</td><td>{euro(total)}</td></tr>
+					<tr><td>{year}</td><td class="num">{euro(total)}</td></tr>
 				{/each}
 			</tbody>
 		</table>

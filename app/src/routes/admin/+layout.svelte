@@ -138,6 +138,23 @@
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 	}
+	:global(.tablewrap .num) {
+		text-align: right;
+		font-weight: 600;
+	}
+	:global(.tablewrap th.num) {
+		font-weight: 600;
+	}
+	:global(.tablewrap .num.light) {
+		font-weight: 400;
+		color: var(--muted);
+	}
+	:global(.tablewrap .by) {
+		display: block;
+		font-size: 0.78rem;
+		font-weight: 400;
+		color: var(--muted);
+	}
 	:global(p.msg) {
 		color: var(--good);
 		font-weight: 600;

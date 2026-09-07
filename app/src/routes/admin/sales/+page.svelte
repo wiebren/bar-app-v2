@@ -86,10 +86,10 @@
 {#if report.length}
 	<div class="tablewrap">
 		<table>
-			<thead><tr><th>Product</th><th>Aantal</th><th>Omzet</th></tr></thead>
+			<thead><tr><th>Product</th><th class="num">Aantal</th><th class="num">Omzet</th></tr></thead>
 			<tbody>
 				{#each report as [name, agg] (name)}
-					<tr><td>{name}</td><td>{agg.qty}</td><td>{euro(agg.total)}</td></tr>
+					<tr><td>{name}</td><td class="num">{agg.qty}</td><td class="num">{euro(agg.total)}</td></tr>
 				{/each}
 			</tbody>
 		</table>
@@ -101,23 +101,23 @@
 <div class="tablewrap">
 	<table>
 		<thead>
-			<tr>
-				<th>Datum</th><th>Product</th><th>Aantal</th><th>Totaal</th>
-				<th>Rekening</th><th>Gestreept door</th>
-			</tr>
+			<tr><th>Datum</th><th>Bestelling</th><th class="num">Totaal</th></tr>
 		</thead>
 		<tbody>
 			{#each orders as o (o.id)}
 				<tr>
-					<td>{new Date(o.created).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}</td>
-					<td>{o.product_name}</td>
-					<td>{o.qty}</td>
-					<td>{euro(o.total ?? 0)}</td>
-					<td>{displayName(o.expand?.user ?? {})}</td>
-					<td>{displayName(o.expand?.booked_by ?? {})}</td>
+					<td>{new Date(o.created).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit' })}</td>
+					<td class="what">
+						{o.qty}× {o.product_name}
+						<span class="by">
+							{displayName(o.expand?.user ?? {})}{#if o.booked_by !== o.user}
+								· door {displayName(o.expand?.booked_by ?? {})}{/if}
+						</span>
+					</td>
+					<td class="num">{euro(o.total ?? 0)}</td>
 				</tr>
 			{:else}
-				<tr><td colspan="6">Nog geen verkopen.</td></tr>
+				<tr><td colspan="3">Nog geen verkopen.</td></tr>
 			{/each}
 		</tbody>
 	</table>

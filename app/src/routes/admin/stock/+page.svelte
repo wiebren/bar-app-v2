@@ -158,13 +158,16 @@
 	<div class="tablewrap">
 		<table>
 			<thead>
-				<tr><th>Product</th><th>Begin</th><th>Inkoop</th><th>Verkoop</th><th>Correcties</th><th>Eind</th></tr>
+				<tr>
+					<th>Product</th><th class="num">Begin</th><th class="num">In</th>
+					<th class="num">Uit</th><th class="num">Corr.</th><th class="num">Eind</th>
+				</tr>
 			</thead>
 			<tbody>
 				{#each report as r (r.name)}
 					<tr>
-						<td>{r.name}</td><td>{r.begin}</td><td>{r.purchases}</td>
-						<td>{r.sales}</td><td>{r.counts}</td><td><strong>{r.end}</strong></td>
+						<td>{r.name}</td><td class="num light">{r.begin}</td><td class="num light">{r.purchases}</td>
+						<td class="num light">{r.sales}</td><td class="num light">{r.counts}</td><td class="num">{r.end}</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -186,14 +189,16 @@
 {#if transactions.length}
 	<div class="tablewrap">
 		<table>
-			<thead><tr><th>Datum</th><th>Type</th><th>Aantal</th><th>Door</th></tr></thead>
+			<thead><tr><th>Datum</th><th>Type</th><th class="num">Aantal</th></tr></thead>
 			<tbody>
 				{#each transactions as t (t.id)}
 					<tr>
-						<td>{new Date(t.date).toLocaleDateString('nl-NL')}</td>
-						<td>{typeLabel[t.type] ?? t.type}</td>
-						<td>{t.qty}</td>
-						<td>{displayName(t.expand?.actor ?? {})}</td>
+						<td>{new Date(t.date).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit' })}</td>
+						<td>
+							{typeLabel[t.type] ?? t.type}
+							<span class="by">door {displayName(t.expand?.actor ?? {})}</span>
+						</td>
+						<td class="num">{t.qty}</td>
 					</tr>
 				{/each}
 			</tbody>

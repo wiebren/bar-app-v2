@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pb, displayName, euro } from '$lib/pb';
+	import { downloadCsv } from '$lib/csv';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
@@ -84,6 +85,23 @@
 		}
 	}
 
+	// the old "barrekeningoverzicht" export: every account incl. inactive,
+	// with the contact details the mobile table no longer shows
+	async function exportCsv() {
+		const all = await pb.collection('users').getFullList({ sort: 'first_name,last_name' });
+		downloadCsv('barrekeningen.csv', [
+			['Naam', 'E-mail', 'Telefoon', 'Saldo', 'Status', 'Rol'],
+			...all.map((u) => [
+				displayName(u),
+				u.email,
+				u.phone,
+				(u.balance ?? 0).toFixed(2),
+				u.active ? 'actief' : 'inactief',
+				u.role
+			])
+		]);
+	}
+
 	async function remove(u: RecordModel) {
 		if (!confirm(`Rekening van ${displayName(u)} definitief verwijderen?`)) return;
 		msg = '';
@@ -101,7 +119,10 @@
 <h1>Rekeningen</h1>
 
 {#if !adding && !editing}
-	<button class="btn" onclick={startAdd}>+ Nieuwe rekening</button>
+	<div class="bar">
+		<button class="btn" onclick={startAdd}>+ Nieuwe rekening</button>
+		<button class="btn" onclick={exportCsv}>Exporteer CSV</button>
+	</div>
 {/if}
 
 {#if adding || editing}
@@ -176,6 +197,11 @@
 	h1 {
 		display: flex;
 		justify-content: space-between;
+	}
+	.bar {
+		display: flex;
+		gap: 0.6rem;
+		flex-wrap: wrap;
 	}
 	.inactive {
 		opacity: 0.55;
