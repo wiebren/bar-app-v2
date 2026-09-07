@@ -4,9 +4,16 @@
 	import type { RecordModel } from 'pocketbase';
 
 	const typeLabel: Record<string, string> = { purchase: 'inkoop', sale: 'verkoop', count: 'telling' };
+	const typeOptions = [
+		['', 'Alles'],
+		['sale', 'Verkoop'],
+		['purchase', 'Inkoop'],
+		['count', 'Correcties']
+	] as const;
 
 	let products = $state<RecordModel[]>([]);
 	let productId = $state('');
+	let typeFilter = $state('');
 	let transactions = $state<RecordModel[]>([]);
 	let txTotal = $state(0);
 
@@ -27,13 +34,22 @@
 
 	async function load() {
 		if (!productId) return;
+		// filter in the query, so the 100-row cap applies after refining
+		const filter = typeFilter
+			? `product = "${productId}" && type = "${typeFilter}"`
+			: `product = "${productId}"`;
 		const res = await pb.collection('stock_entries').getList(1, 100, {
-			filter: `product = "${productId}"`,
+			filter,
 			sort: '-date',
 			expand: 'actor'
 		});
 		transactions = res.items;
 		txTotal = res.totalItems;
+	}
+
+	function setType(t: string) {
+		typeFilter = t;
+		load();
 	}
 </script>
 
@@ -48,6 +64,13 @@
 			{/each}
 		</select>
 	</label>
+	<div class="seg" role="group" aria-label="Type transactie">
+		{#each typeOptions as [value, label] (value)}
+			<button type="button" class:active={typeFilter === value} onclick={() => setType(value)}>
+				{label}
+			</button>
+		{/each}
+	</div>
 </div>
 
 {#if transactions.length}
@@ -72,7 +95,7 @@
 		</table>
 	</div>
 {:else if productId}
-	<p class="capnote">Nog geen transacties voor dit product.</p>
+	<p class="capnote">Geen transacties voor deze selectie.</p>
 {/if}
 
 <style>
@@ -80,5 +103,26 @@
 		font-size: 0.92rem;
 		color: var(--muted);
 		margin: 0.2rem 0 0.4rem;
+	}
+	.seg {
+		display: flex;
+		gap: 0.4rem;
+		flex-wrap: wrap;
+	}
+	.seg button {
+		padding: 0.45rem 0.9rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		font-family: inherit;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		background: var(--surface);
+		color: var(--muted);
+		cursor: pointer;
+	}
+	.seg button.active {
+		background: var(--ink);
+		border-color: var(--ink);
+		color: var(--surface);
 	}
 </style>
