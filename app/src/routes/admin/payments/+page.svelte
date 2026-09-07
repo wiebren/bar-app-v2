@@ -1,13 +1,19 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { pb, displayName, euro } from '$lib/pb';
 	import { downloadCsv } from '$lib/csv';
 	import type { RecordModel } from 'pocketbase';
 
 	let payments = $state<RecordModel[]>([]);
+	let filterUser = $state<RecordModel | null>(null);
 
 	$effect(() => {
+		// ?user=… (from the account edit screen) shows one account's payments
+		const uid = page.url.searchParams.get('user');
 		(async () => {
+			filterUser = uid ? await pb.collection('users').getOne(uid) : null;
 			payments = await pb.collection('payments').getFullList({
+				filter: uid ? `user = "${uid}"` : '',
 				sort: '-created',
 				expand: 'user,admin'
 			});
@@ -37,6 +43,13 @@
 
 <h1>Betalingshistorie</h1>
 
+{#if filterUser}
+	<p class="filternote">
+		Alleen betalingen van <strong>{displayName(filterUser)}</strong> —
+		<a href="/admin/payments">toon alles</a>
+	</p>
+{/if}
+
 <button class="btn" onclick={exportCsv} disabled={!payments.length}>Exporteer CSV</button>
 
 <div class="tablewrap">
@@ -62,6 +75,11 @@
 </div>
 
 <style>
+	.filternote {
+		margin: -0.4rem 0 0.9rem;
+		font-size: 0.92rem;
+		color: var(--muted);
+	}
 	.who {
 		max-width: 13rem;
 		overflow: hidden;

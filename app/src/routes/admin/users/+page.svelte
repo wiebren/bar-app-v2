@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { pb, displayName, euro } from '$lib/pb';
 	import { downloadCsv } from '$lib/csv';
-	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
 	let users = $state<RecordModel[]>([]);
@@ -27,6 +26,8 @@
 		adding = true;
 		editing = null;
 		form = { first_name: '', infix: '', last_name: '', email: '', phone: '', active: true, role: 'user' };
+		msg = '';
+		error = '';
 	}
 
 	function startEdit(u: RecordModel) {
@@ -41,6 +42,15 @@
 			active: !!u.active,
 			role: u.role ?? 'user'
 		};
+		msg = '';
+		error = '';
+	}
+
+	function rowKey(e: KeyboardEvent, u: RecordModel) {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			startEdit(u);
+		}
 	}
 
 	async function save(e: SubmitEvent) {
@@ -109,6 +119,7 @@
 		try {
 			await pb.collection('users').delete(u.id);
 			msg = 'Rekening verwijderd.';
+			editing = null;
 			await load();
 		} catch {
 			error = 'Verwijderen mislukt (alleen inactieve rekeningen kunnen weg).';
@@ -116,18 +127,12 @@
 	}
 </script>
 
-<h1>Rekeningen</h1>
-
-{#if !adding && !editing}
-	<div class="bar">
-		<button class="btn" onclick={startAdd}>+ Nieuwe rekening</button>
-		<button class="btn" onclick={exportCsv}>Exporteer CSV</button>
-	</div>
-{/if}
-
 {#if adding || editing}
+	<h1>{adding ? 'Nieuwe rekening' : `Wijzig: ${displayName(editing!)}`}</h1>
 	<form class="panel" onsubmit={save}>
-		<h2>{adding ? 'Nieuwe rekening' : `Wijzig: ${displayName(editing!)}`}</h2>
+		{#if editing}
+			<p class="saldo">Saldo: <strong>{euro(editing.balance ?? 0)}</strong></p>
+		{/if}
 		<div class="row">
 			<label>Voornaam<input bind:value={form.first_name} required /></label>
 			<label>Tussenvoegsel<input bind:value={form.infix} /></label>
@@ -153,55 +158,76 @@
 			</button>
 		</div>
 	</form>
+
+	{#if editing}
+		<div class="row actions">
+			<a class="btnlink" href="/admin/topup?user={editing.id}">Saldo bijschrijven</a>
+			<a class="btnlink" href="/admin/payments?user={editing.id}">Betaalgeschiedenis</a>
+			<a class="btnlink" href="/admin/sales?user={editing.id}">Bestelgeschiedenis</a>
+		</div>
+		{#if !editing.active}
+			<button class="btn danger delete" onclick={() => remove(editing!)}>
+				Rekening definitief verwijderen
+			</button>
+		{/if}
+	{/if}
+
+	{#if error}<p class="error">{error}</p>{/if}
+{:else}
+	<h1>Rekeningen</h1>
+	<div class="bar">
+		<button class="btn" onclick={startAdd}>+ Nieuwe rekening</button>
+		<button class="btn" onclick={exportCsv}>Exporteer CSV</button>
+	</div>
+
+	{#if msg}<p class="msg">{msg}</p>{/if}
+	{#if error}<p class="error">{error}</p>{/if}
+
+	<label class="toggle">
+		<input type="checkbox" bind:checked={showInactive} />
+		toon ook inactieve rekeningen
+	</label>
+
+	<div class="tablewrap">
+		<table>
+			<thead>
+				<tr><th>Naam</th><th>Saldo</th></tr>
+			</thead>
+			<tbody>
+				{#each users as u (u.id)}
+					<tr
+						class="clickable"
+						class:inactive={!u.active}
+						role="button"
+						tabindex="0"
+						onclick={() => startEdit(u)}
+						onkeydown={(e) => rowKey(e, u)}
+					>
+						<td class="name">
+							{displayName(u)}
+							{#if u.role === 'admin'}<span class="chip">beheerder</span>{/if}
+							{#if showInactive && !u.active}<span class="chip off">inactief</span>{/if}
+						</td>
+						<td>{euro(u.balance ?? 0)}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
 {/if}
 
-{#if msg}<p class="msg">{msg}</p>{/if}
-{#if error}<p class="error">{error}</p>{/if}
-
-<label class="toggle">
-	<input type="checkbox" bind:checked={showInactive} />
-	toon ook inactieve rekeningen
-</label>
-
-<div class="tablewrap">
-	<table>
-		<thead>
-			<tr><th>Naam</th><th>Saldo</th><th></th></tr>
-		</thead>
-		<tbody>
-			{#each users as u (u.id)}
-				<tr class:inactive={!u.active}>
-					<td class="name">
-						{displayName(u)}
-						{#if u.role === 'admin'}<span class="chip">beheerder</span>{/if}
-						{#if showInactive && !u.active}<span class="chip off">inactief</span>{/if}
-					</td>
-					<td>{euro(u.balance ?? 0)}</td>
-					<td class="actions">
-						<button class="iconbtn small" onclick={() => startEdit(u)} aria-label="Wijzig {displayName(u)}" title="Wijzig">
-							<Icon name="pencil" size={18} />
-						</button>
-						{#if !u.active}
-							<button class="iconbtn small danger" onclick={() => remove(u)} aria-label="Verwijder {displayName(u)}" title="Verwijder">
-								<Icon name="trash" size={18} />
-							</button>
-						{/if}
-					</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
-</div>
-
 <style>
-	h1 {
-		display: flex;
-		justify-content: space-between;
-	}
 	.bar {
 		display: flex;
 		gap: 0.6rem;
 		flex-wrap: wrap;
+	}
+	.clickable {
+		cursor: pointer;
+	}
+	.clickable:hover td,
+	.clickable:focus-visible td {
+		background: var(--bg);
 	}
 	.inactive {
 		opacity: 0.55;
@@ -216,19 +242,37 @@
 		cursor: pointer;
 	}
 	.name {
-		max-width: 12rem;
+		max-width: 14rem;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
+	.saldo {
+		margin: 0;
+		color: var(--muted);
+	}
+	.saldo strong {
+		color: var(--ink);
+		font-variant-numeric: tabular-nums;
+	}
 	.actions {
-		text-align: right;
+		display: flex;
+		gap: 0.7rem;
+		flex-wrap: wrap;
+		margin-bottom: 1.1rem;
 	}
-	.iconbtn.small {
-		width: 2.2rem;
-		height: 2.2rem;
+	.btnlink {
+		padding: 0.7rem 1.3rem;
+		font-size: 1rem;
+		font-weight: 600;
+		text-decoration: none;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-s);
+		background: var(--surface);
+		color: inherit;
+		box-shadow: var(--shadow);
 	}
-	.iconbtn.danger {
-		color: var(--bad);
+	.delete {
+		margin-top: 0.4rem;
 	}
 	.chip.off {
 		background: color-mix(in srgb, var(--muted) 14%, transparent);

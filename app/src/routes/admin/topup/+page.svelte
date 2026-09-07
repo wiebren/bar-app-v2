@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { pb, displayName, euro, getSettings } from '$lib/pb';
 	import BalanceBadge from '$lib/components/BalanceBadge.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -17,12 +18,16 @@
 	let error = $state('');
 
 	$effect(() => {
+		// ?user=… (from the account edit screen) skips the name picker
+		const preselect = page.url.searchParams.get('user');
 		(async () => {
 			yellow = (await getSettings()).yellow_threshold ?? 0;
 			users = await pb.collection('users').getFullList({
 				filter: 'active = true',
 				sort: 'first_name,last_name'
 			});
+			const match = preselect && users.find((u) => u.id === preselect);
+			if (match && !selected) selected = match;
 		})();
 	});
 

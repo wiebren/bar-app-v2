@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page as route } from '$app/state';
 	import { pb, displayName, euro } from '$lib/pb';
 	import { downloadCsv } from '$lib/csv';
 	import type { RecordModel } from 'pocketbase';
@@ -8,6 +9,7 @@
 	let orders = $state<RecordModel[]>([]);
 	let page = $state(1);
 	let hasMore = $state(false);
+	let filterUser = $state<RecordModel | null>(null);
 
 	// per-product report
 	let from = $state(new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10));
@@ -15,7 +17,9 @@
 	let report = $state<[string, { qty: number; total: number }][]>([]);
 
 	async function loadPage(p: number) {
+		const uid = route.url.searchParams.get('user');
 		const res = await pb.collection('orders').getList(p, PER_PAGE, {
+			filter: uid ? `user = "${uid}"` : '',
 			sort: '-created',
 			expand: 'user,booked_by'
 		});
@@ -24,7 +28,12 @@
 		hasMore = p < res.totalPages;
 	}
 	$effect(() => {
-		loadPage(1);
+		// ?user=… (from the account edit screen) shows one account's orders
+		const uid = route.url.searchParams.get('user');
+		(async () => {
+			filterUser = uid ? await pb.collection('users').getOne(uid) : null;
+			await loadPage(1);
+		})();
 	});
 
 	async function runReport(e?: SubmitEvent) {
@@ -45,7 +54,9 @@
 
 	async function exportHistory() {
 		// the on-screen list is paged; the export must contain everything
+		const uid = route.url.searchParams.get('user');
 		const all = await pb.collection('orders').getFullList({
+			filter: uid ? `user = "${uid}"` : '',
 			sort: '-created',
 			expand: 'user,booked_by'
 		});
@@ -102,7 +113,13 @@
 {/if}
 
 <h2>Historie</h2>
-<button class="btn" onclick={exportHistory} disabled={!orders.length}>Exporteer CSV (geladen regels)</button>
+{#if filterUser}
+	<p class="filternote">
+		Alleen bestellingen van <strong>{displayName(filterUser)}</strong> —
+		<a href="/admin/sales">toon alles</a>
+	</p>
+{/if}
+<button class="btn" onclick={exportHistory} disabled={!orders.length}>Exporteer CSV</button>
 <div class="tablewrap">
 	<table>
 		<thead>
@@ -130,3 +147,11 @@
 {#if hasMore}
 	<button class="btn" onclick={() => loadPage(page + 1)}>Meer laden</button>
 {/if}
+
+<style>
+	.filternote {
+		margin: -0.2rem 0 0.6rem;
+		font-size: 0.92rem;
+		color: var(--muted);
+	}
+</style>
