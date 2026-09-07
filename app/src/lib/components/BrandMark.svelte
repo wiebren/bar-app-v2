@@ -1,21 +1,27 @@
 <script lang="ts">
 	import { BRANDS } from '$lib/brands';
 
-	let { brand, height = 1.9 }: { brand: string | undefined; height?: number } = $props();
+	let { brand, height = 2.4 }: { brand: string | undefined; height?: number } = $props();
 
 	const b = $derived(BRANDS[brand ?? '']);
 </script>
 
 {#if b}
 	{#if b.logo}
-		<span class="badge" style:height="{height}rem" title={b.label}>
+		<!-- borderless, square-leaning: wide wordmarks may stretch to 1.6x height -->
+		<span
+			class="badge"
+			style:height="{height}rem"
+			style:max-width="{height * 1.6}rem"
+			title={b.label}
+		>
 			<img src={b.logo} alt={b.label} />
 		</span>
 	{:else}
 		<span
 			class="chip"
-			style:width="{height}rem"
-			style:height="{height}rem"
+			style:width="{height * 0.85}rem"
+			style:height="{height * 0.85}rem"
 			style:background={b.color}
 			style:color={b.fg}
 			title={b.label}>{b.initials}</span
@@ -28,16 +34,13 @@
 		flex-shrink: 0;
 		display: inline-flex;
 		align-items: center;
-		background: #fff;
-		border: 1px solid var(--line);
-		border-radius: 0.5rem;
-		padding: 0.16rem 0.34rem;
+		justify-content: center;
 	}
 	.badge img {
 		display: block;
 		height: 100%;
 		width: auto;
-		max-width: 3.6rem;
+		max-width: 100%;
 		object-fit: contain;
 	}
 	.chip {

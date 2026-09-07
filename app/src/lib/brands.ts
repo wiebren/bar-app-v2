@@ -8,24 +8,24 @@ export type Brand = { label: string; color: string; fg: string; initials: string
 export const BRANDS: Record<string, Brand> = {
 	hertog_jan: {
 		label: 'Hertog Jan',
-		color: '#1e3a6e',
-		fg: '#f0c04a',
+		color: '#a58155', // copper, sampled from the shield
+		fg: '#ffffff',
 		initials: 'HJ',
-		logo: '/brands/hertog_jan.svg'
+		logo: '/brands/hertog_jan.png'
 	},
 	grolsch: {
 		label: 'Grolsch',
-		color: '#0e7a3c',
+		color: '#2f6139', // sampled from the wordmark
 		fg: '#ffffff',
 		initials: 'G',
-		logo: '/brands/grolsch.svg'
+		logo: '/brands/grolsch.png'
 	},
 	amstel: {
 		label: 'Amstel',
 		color: '#c8102e',
 		fg: '#ffffff',
 		initials: 'A',
-		logo: '/brands/amstel.svg'
+		logo: '/brands/amstel.png'
 	},
 	lidl_cola: {
 		label: 'Lidl Cola',

@@ -68,7 +68,7 @@
 		<div class="card">
 			<p class="line">
 				<span class="item">
-					<BrandMark brand={product.brand} height={1.6} />
+					<BrandMark brand={product.brand} height={2} />
 					{qty}× {product.name}
 				</span>
 				<strong>{euro(total)}</strong>

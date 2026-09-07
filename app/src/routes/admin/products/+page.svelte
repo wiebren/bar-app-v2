@@ -124,7 +124,7 @@
 					<td>{p.sort_order}</td>
 					<td class="prod">
 						{p.name}
-						<BrandMark brand={p.brand} height={1.4} />
+						<BrandMark brand={p.brand} height={1.6} />
 					</td>
 					<td>{euro(p.price)}</td>
 					<td>{p.sellable ? '✔' : '—'}</td>
