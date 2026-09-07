@@ -49,8 +49,7 @@ server-managed — API rules reject client writes.
 │   ├── pb_hooks/       #   server logic: routes, cron, guards
 │   └── pb_public/      #   committed SvelteKit build (served by PocketBase)
 ├── app/                # SvelteKit PWA source
-├── deploy/             # example nginx + supervisor configs, PB fetch script
-└── docs/               # rebuild spec and feature inventory
+└── deploy/             # example nginx + supervisor configs, PB fetch script
 ```
 
 ## Installing
@@ -133,12 +132,6 @@ Checks: `npm run check` (svelte-check / TypeScript).
 - `GET/POST /api/bar/mail-debtors/{red|yellow}` — admin-only; GET previews
   recipients, POST sends.
 - Cron `daily-digest` (21:30 UTC) — per-user summary of the day's orders.
-
-## Docs
-
-- `docs/spec.md` — the rebuild specification this app was built from.
-- `docs/feature-inventory.md` — feature audit of the legacy PHP app that
-  seeded the spec.
 
 ## License
 

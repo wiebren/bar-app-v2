@@ -1,5 +1,5 @@
 /// <reference path="../pb_data/types.d.ts" />
-// Server-side logic for the bar-app (see docs/spec.md §5).
+// Server-side logic for the bar-app.
 
 // ---------------------------------------------------------------------------
 // 5.1 Order processing — one transaction: order + stock ledger + balance.
