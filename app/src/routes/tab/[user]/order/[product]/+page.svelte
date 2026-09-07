@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { pb, displayName, euro, getSettings } from '$lib/pb';
+	import { BRANDS } from '$lib/brands';
 	import BalanceBadge from '$lib/components/BalanceBadge.svelte';
 	import BrandMark from '$lib/components/BrandMark.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -53,7 +54,19 @@
 			<p>Nieuw saldo: <BalanceBadge balance={newBalance} yellowThreshold={yellow} /></p>
 		</div>
 	{:else if !qty}
-		<h1>{product.name} — hoeveel?</h1>
+		<h1>Hoeveel?</h1>
+		<div
+			class="productcard"
+			style:border-left={BRANDS[product.brand]
+				? `5px solid ${BRANDS[product.brand].color}`
+				: undefined}
+		>
+			<span class="ptext">
+				<span class="pname">{product.name}</span>
+				<span class="pprice">{euro(product.price)}</span>
+			</span>
+			<BrandMark brand={product.brand} />
+		</div>
 		<div class="qty">
 			{#each QUANTITIES as n (n)}
 				<button onclick={() => (qty = n)}>{n}</button>
@@ -62,7 +75,7 @@
 				<Icon name="crate" size={26} /> 24
 			</button>
 		</div>
-		<a class="cancel" href="/tab/{tabUser.id}">Annuleren</a>
+		<a class="cancelbtn" href="/tab/{tabUser.id}">Annuleren</a>
 	{:else}
 		<h1>Bevestig bestelling</h1>
 		<div class="card">
@@ -125,8 +138,46 @@
 	.qty button:active {
 		transform: scale(0.95);
 	}
-	.cancel {
-		color: var(--muted);
+	.productcard {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.9rem 1rem;
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		background: var(--surface);
+		box-shadow: var(--shadow);
+		margin-bottom: 1rem;
+	}
+	.ptext {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		min-width: 0;
+	}
+	.pname {
+		font-weight: 600;
+		font-size: 1.1rem;
+	}
+	.pprice {
+		color: var(--accent);
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+	.cancelbtn {
+		display: block;
+		width: 100%;
+		padding: 0.95rem;
+		font-size: 1.05rem;
+		font-weight: 600;
+		text-align: center;
+		text-decoration: none;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-s);
+		background: var(--surface);
+		color: inherit;
+		box-shadow: var(--shadow);
 	}
 	.card {
 		background: var(--surface);
