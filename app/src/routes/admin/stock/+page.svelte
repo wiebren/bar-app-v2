@@ -1,16 +1,11 @@
 <script lang="ts">
 	import { pb, displayName } from '$lib/pb';
 	import { downloadCsv } from '$lib/csv';
+	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
 	let products = $state<RecordModel[]>([]);
-	let msg = $state('');
-	let error = $state('');
 
-	// purchase entry
-	let purchase = $state({ product: '', qty: 1, date: new Date().toISOString().slice(0, 10) });
-	// counting
-	let count = $state({ product: '', counted: 0 });
 	// report
 	let from = $state(new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10));
 	let to = $state(new Date().toISOString().slice(0, 10));
@@ -26,39 +21,6 @@
 			products = await pb.collection('products').getFullList({ sort: 'sort_order,name' });
 		})();
 	});
-
-	async function addPurchase(e: SubmitEvent) {
-		e.preventDefault();
-		msg = '';
-		error = '';
-		try {
-			await pb.collection('stock_entries').create({
-				type: 'purchase',
-				product: purchase.product,
-				qty: purchase.qty,
-				date: `${purchase.date} 12:00:00`,
-				actor: pb.authStore.record!.id
-			});
-			msg = 'Inkoop geboekt.';
-		} catch {
-			error = 'Inboeken mislukt.';
-		}
-	}
-
-	async function submitCount(e: SubmitEvent) {
-		e.preventDefault();
-		msg = '';
-		error = '';
-		try {
-			const res = await pb.send('/api/bar/stock-count', {
-				method: 'POST',
-				body: { product: count.product, counted: count.counted }
-			});
-			msg = `Telling verwerkt: was ${res.previous}, geteld ${res.counted} (correctie ${res.delta > 0 ? '+' : ''}${res.delta}).`;
-		} catch {
-			error = 'Telling verwerken mislukt.';
-		}
-	}
 
 	async function runReport(e?: SubmitEvent) {
 		e?.preventDefault();
@@ -105,43 +67,16 @@
 
 <h1>Voorraad</h1>
 
-{#if msg}<p class="msg">{msg}</p>{/if}
-{#if error}<p class="error">{error}</p>{/if}
-
-<h2>Inkoop boeken</h2>
-<form class="panel" onsubmit={addPurchase}>
-	<div class="row">
-		<label>Product
-			<select bind:value={purchase.product} required>
-				<option value="" disabled>kies…</option>
-				{#each products.filter((p) => p.stock_tracked) as p (p.id)}
-					<option value={p.id}>{p.name}</option>
-				{/each}
-			</select>
-		</label>
-		<label>Aantal<input type="number" bind:value={purchase.qty} min="1" step="1" required /></label>
-		<label>Datum<input type="date" bind:value={purchase.date} required /></label>
-	</div>
-	<button class="btn">Boek inkoop</button>
-</form>
-
-<h2>Telling invoeren</h2>
-<form class="panel" onsubmit={submitCount}>
-	<div class="row">
-		<label>Product
-			<select bind:value={count.product} required>
-				<option value="" disabled>kies…</option>
-				{#each products.filter((p) => p.stock_tracked) as p (p.id)}
-					<option value={p.id}>{p.name}</option>
-				{/each}
-			</select>
-		</label>
-		<label>Getelde voorraad
-			<input type="number" bind:value={count.counted} min="0" step="1" required />
-		</label>
-	</div>
-	<button class="btn">Verwerk telling</button>
-</form>
+<div class="wizards">
+	<a class="wizard" href="/admin/stock/add">
+		<Icon name="plus" size={26} />
+		Inkoop boeken
+	</a>
+	<a class="wizard" href="/admin/stock/count">
+		<Icon name="crate" size={26} />
+		Voorraad tellen
+	</a>
+</div>
 
 <h2>Voorraadrapport</h2>
 <form class="panel" onsubmit={runReport}>
@@ -205,3 +140,31 @@
 		</table>
 	</div>
 {/if}
+
+<style>
+	.wizards {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 0.6rem;
+		margin-bottom: 1.4rem;
+	}
+	.wizard {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.6rem;
+		padding: 1.1rem 1rem;
+		font-size: 1.05rem;
+		font-weight: 600;
+		text-decoration: none;
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		background: var(--surface);
+		color: inherit;
+		box-shadow: var(--shadow);
+		transition: transform 0.08s ease;
+	}
+	.wizard:active {
+		transform: scale(0.97);
+	}
+</style>
