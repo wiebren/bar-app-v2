@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<!-- App icon source. Bold flat shapes so it stays crisp at every size;
+	     content keeps ~20% margin so the iOS/maskable corner mask never clips it. -->
+	<rect width="512" height="512" fill="#211d18"/>
+	<g>
+		<!-- handle -->
+		<circle cx="330" cy="292" r="52" fill="none" stroke="#f59e0b" stroke-width="28"/>
+		<!-- mug body -->
+		<rect x="128" y="182" width="164" height="222" rx="26" fill="#f59e0b"/>
+		<!-- foam -->
+		<circle cx="163" cy="148" r="36" fill="#faf6ef"/>
+		<circle cx="216" cy="130" r="44" fill="#faf6ef"/>
+		<circle cx="272" cy="150" r="36" fill="#faf6ef"/>
+		<rect x="129" y="142" width="180" height="52" rx="26" fill="#faf6ef"/>
+		<!-- bubbles -->
+		<circle cx="186" cy="262" r="15" fill="#faf6ef" opacity="0.9"/>
+		<circle cx="232" cy="312" r="10" fill="#faf6ef" opacity="0.75"/>
+		<circle cx="200" cy="352" r="7" fill="#faf6ef" opacity="0.6"/>
+	</g>
+</svg>
