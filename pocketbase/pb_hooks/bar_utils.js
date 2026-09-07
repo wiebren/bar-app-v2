@@ -6,6 +6,21 @@ function getSettings(app) {
 	return app.findFirstRecordByFilter('settings', "id != ''");
 }
 
+/**
+ * Auth tokens last a year, so deactivation must be re-checked on every
+ * custom route — requireAuth() alone would keep serving an ex-member.
+ */
+function requireActive(e) {
+	if (!e.auth || !e.auth.getBool('active')) {
+		throw new ForbiddenError('Je account is niet actief.');
+	}
+}
+
+function requireActiveAdmin(e) {
+	requireActive(e);
+	if (e.auth.getString('role') !== 'admin') throw new ForbiddenError();
+}
+
 function fullName(user) {
 	return [user.getString('first_name'), user.getString('infix'), user.getString('last_name')]
 		.filter(Boolean)
@@ -60,4 +75,12 @@ function findDebtorGroup(app, group) {
 	return app.findRecordsByFilter('users', filter, 'last_name', 0, 0);
 }
 
-module.exports = { getSettings, fullName, round2, sendBalanceMail, findDebtorGroup };
+module.exports = {
+	getSettings,
+	requireActive,
+	requireActiveAdmin,
+	fullName,
+	round2,
+	sendBalanceMail,
+	findDebtorGroup
+};

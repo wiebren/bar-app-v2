@@ -9,6 +9,7 @@ routerAdd(
 	'/api/bar/order',
 	(e) => {
 		const utils = require(`${__hooks}/bar_utils.js`);
+		utils.requireActive(e);
 
 		const data = new DynamicModel({ user: '', product: '', qty: 0, party: '' });
 		e.bindBody(data);
@@ -102,7 +103,7 @@ routerAdd(
 	'/api/bar/topup',
 	(e) => {
 		const utils = require(`${__hooks}/bar_utils.js`);
-		if (e.auth.getString('role') !== 'admin') throw new ForbiddenError();
+		utils.requireActiveAdmin(e);
 
 		const data = new DynamicModel({ user: '', amount: 0 });
 		e.bindBody(data);
@@ -142,7 +143,7 @@ routerAdd(
 	'POST',
 	'/api/bar/set-email',
 	(e) => {
-		if (e.auth.getString('role') !== 'admin') throw new ForbiddenError();
+		require(`${__hooks}/bar_utils.js`).requireActiveAdmin(e);
 
 		const data = new DynamicModel({ user: '', email: '' });
 		e.bindBody(data);
@@ -163,7 +164,7 @@ routerAdd(
 	'POST',
 	'/api/bar/stock-count',
 	(e) => {
-		if (e.auth.getString('role') !== 'admin') throw new ForbiddenError();
+		require(`${__hooks}/bar_utils.js`).requireActiveAdmin(e);
 
 		const data = new DynamicModel({ product: '', counted: 0 });
 		e.bindBody(data);
@@ -206,6 +207,8 @@ routerAdd(
 	'POST',
 	'/api/bar/party',
 	(e) => {
+		require(`${__hooks}/bar_utils.js`).requireActive(e);
+
 		const data = new DynamicModel({ message: '', cap: 0, hours: 0 });
 		e.bindBody(data);
 		const hours = Number(data.hours);
@@ -239,6 +242,8 @@ routerAdd(
 	'POST',
 	'/api/bar/party-stop',
 	(e) => {
+		require(`${__hooks}/bar_utils.js`).requireActive(e);
+
 		const data = new DynamicModel({ party: '' });
 		e.bindBody(data);
 		if (!data.party) throw new BadRequestError('Geen traktatie opgegeven.');
@@ -264,7 +269,7 @@ routerAdd(
 	'/api/bar/mail-debtors/{group}',
 	(e) => {
 		const utils = require(`${__hooks}/bar_utils.js`);
-		if (e.auth.getString('role') !== 'admin') throw new ForbiddenError();
+		utils.requireActiveAdmin(e);
 		const users = utils.findDebtorGroup(e.app, e.request.pathValue('group'));
 		return e.json(
 			200,
@@ -279,7 +284,7 @@ routerAdd(
 	'/api/bar/mail-debtors/{group}',
 	(e) => {
 		const utils = require(`${__hooks}/bar_utils.js`);
-		if (e.auth.getString('role') !== 'admin') throw new ForbiddenError();
+		utils.requireActiveAdmin(e);
 		const group = e.request.pathValue('group');
 		const settings = utils.getSettings(e.app);
 		let mailed = 0;
@@ -342,6 +347,18 @@ cronAdd('daily-digest', '30 21 * * *', () => {
 		}
 	}
 });
+
+// ---------------------------------------------------------------------------
+// Deactivated accounts must not authenticate at all — neither a fresh OTP
+// login nor a refresh of an existing year-long token. The login screen also
+// checks `active`, but only cosmetically; this is the actual boundary.
+// ---------------------------------------------------------------------------
+onRecordAuthRequest((e) => {
+	if (!e.record.getBool('active')) {
+		throw new ForbiddenError('Je bent niet meer actief binnen de bar-app.');
+	}
+	e.next();
+}, 'users');
 
 // ---------------------------------------------------------------------------
 // §6 guard: you can't demote/deactivate yourself, and never the last admin.

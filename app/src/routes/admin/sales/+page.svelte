@@ -43,10 +43,15 @@
 		report = [...byProduct.entries()].sort((a, b) => b[1].total - a[1].total);
 	}
 
-	function exportHistory() {
+	async function exportHistory() {
+		// the on-screen list is paged; the export must contain everything
+		const all = await pb.collection('orders').getFullList({
+			sort: '-created',
+			expand: 'user,booked_by'
+		});
 		downloadCsv('verkoophistorie.csv', [
 			['Datum', 'Tijd', 'Product', 'Stukprijs', 'Aantal', 'Totaal', 'Rekening', 'Gestreept door'],
-			...orders.map((o) => {
+			...all.map((o) => {
 				const d = new Date(o.created);
 				return [
 					d.toLocaleDateString('nl-NL'),

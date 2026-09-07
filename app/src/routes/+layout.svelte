@@ -17,10 +17,21 @@
 			try {
 				// refresh validates the token and picks up role/active changes
 				await pb.collection('users').authRefresh();
+			} catch (err) {
+				// only a real rejection ends the session; a network hiccup
+				// (offline PWA start) must not log out a year-long login
+				const status = (err as { status?: number }).status ?? 0;
+				if (status === 401 || status === 403 || status === 404) {
+					pb.authStore.clear();
+					await goto('/login');
+					ready = true;
+					return;
+				}
+			}
+			try {
 				title = (await getSettings()).app_title || 'Bar-app';
 			} catch {
-				pb.authStore.clear();
-				await goto('/login');
+				// offline — keep the default title
 			}
 		}
 		ready = true;

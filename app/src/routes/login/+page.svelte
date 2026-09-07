@@ -18,15 +18,14 @@
 		autoLogin = true;
 		try {
 			await pb.collection('users').authWithOTP(linkOtpId, linkCode);
-			if (!pb.authStore.record?.active) {
-				pb.authStore.clear();
-				error = 'Je bent niet meer actief binnen de bar-app. Vraag activatie aan de beheerders.';
-			} else {
-				location.href = '/';
-				return;
-			}
-		} catch {
-			error = 'Ongeldige of verlopen inloglink. Vraag hieronder een nieuwe code aan.';
+			location.href = '/';
+			return;
+		} catch (err) {
+			// the server refuses deactivated accounts with a 403
+			error =
+				(err as { status?: number }).status === 403
+					? 'Je bent niet meer actief binnen de bar-app. Vraag activatie aan de beheerders.'
+					: 'Ongeldige of verlopen inloglink. Vraag hieronder een nieuwe code aan.';
 		}
 		autoLogin = false;
 	});
@@ -50,14 +49,12 @@
 		error = '';
 		try {
 			await pb.collection('users').authWithOTP(otpId, code.trim());
-			if (!pb.authStore.record?.active) {
-				pb.authStore.clear();
-				error = 'Je bent niet meer actief binnen de bar-app. Vraag activatie aan de beheerders.';
-			} else {
-				location.href = '/'; // full reload so the layout re-runs its auth check
-			}
-		} catch {
-			error = 'Ongeldige of verlopen code.';
+			location.href = '/'; // full reload so the layout re-runs its auth check
+		} catch (err) {
+			error =
+				(err as { status?: number }).status === 403
+					? 'Je bent niet meer actief binnen de bar-app. Vraag activatie aan de beheerders.'
+					: 'Ongeldige of verlopen code.';
 		}
 		busy = false;
 	}

@@ -4,7 +4,10 @@ export function downloadCsv(filename: string, rows: (string | number | null | un
 		.map((r) =>
 			r
 				.map((v) => {
-					const s = String(v ?? '');
+					let s = String(v ?? '');
+					// neutralize spreadsheet formulas (=SUM…, @…) without touching
+					// negative amounts ("-12.50") or phone numbers ("+31612345678")
+					if (/^[=@\t\r]/.test(s) || (/^[+-]/.test(s) && !/^[+-]\d/.test(s))) s = "'" + s;
 					return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 				})
 				.join(';')
