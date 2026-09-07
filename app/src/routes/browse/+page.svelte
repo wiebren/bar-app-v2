@@ -22,7 +22,8 @@
 	const matches = $derived(users.filter((u) => (u.first_name?.[0] ?? '?').toUpperCase() === letter));
 </script>
 
-<h1>Wie ben je?</h1>
+<!-- one-time "streep voor een ander": auth stays your own, booked_by records you -->
+<h1>Ik streep voor…</h1>
 
 {#if !letter}
 	<div class="letters">

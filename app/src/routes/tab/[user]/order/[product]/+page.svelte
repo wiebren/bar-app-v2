@@ -59,7 +59,8 @@
 			});
 			paidByHost = party ? hostName(party) : '';
 			done = true;
-			setTimeout(() => (location.href = `/tab/${tabUser!.id}`), 2000);
+			// "streep voor" is one-time: land back on your OWN tab, not the one just charged
+			setTimeout(() => (location.href = `/tab/${pb.authStore.record?.id}`), 2000);
 		} catch {
 			error = 'Bestelling mislukt, probeer opnieuw.';
 			busy = false;

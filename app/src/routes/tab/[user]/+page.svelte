@@ -44,6 +44,13 @@
 		<BalanceBadge balance={tabUser.balance ?? 0} yellowThreshold={yellow} />
 	</div>
 
+	{#if tabUser.id !== pb.authStore.record?.id}
+		<p class="foreign">
+			Je streept eenmalig voor deze rekening — na de bestelling kom je terug op
+			<a href="/tab/{pb.authStore.record?.id}">je eigen rekening</a>.
+		</p>
+	{/if}
+
 	<div class="products">
 		{#each products as p (p.id)}
 			{@const brand = BRANDS[p.brand]}
@@ -101,6 +108,11 @@
 	}
 	.head h1 {
 		margin: 0;
+	}
+	.foreign {
+		margin: -0.4rem 0 1rem;
+		font-size: 0.9rem;
+		color: var(--muted);
 	}
 	.products {
 		display: grid;

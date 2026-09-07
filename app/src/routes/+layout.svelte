@@ -60,7 +60,12 @@
 					{title}
 				</a>
 				<nav>
-					<a href="/browse" class="iconbtn" aria-label="Andere rekening" title="Andere rekening">
+					<a
+						href="/browse"
+						class="iconbtn"
+						aria-label="Strepen voor een ander"
+						title="Strepen voor een ander"
+					>
 						<Icon name="users" />
 					</a>
 					<a href="/topup" class="iconbtn" aria-label="Opwaarderen" title="Opwaarderen">

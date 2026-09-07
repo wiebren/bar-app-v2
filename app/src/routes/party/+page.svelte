@@ -20,12 +20,10 @@
 		refresh();
 	});
 
-	// one party per host: the form hides while your own is running
-	const hostsOwn = $derived(parties.some((p) => p.host === pb.authStore.record?.id));
-
-	function mayStop(party: RecordModel): boolean {
-		return party.host === pb.authStore.record?.id || isAdmin();
-	}
+	// this page is about YOUR treat state; other hosts' parties only appear in
+	// the admin management list below
+	const myParty = $derived(parties.find((p) => p.host === pb.authStore.record?.id) ?? null);
+	const otherParties = $derived(parties.filter((p) => p.host !== pb.authStore.record?.id));
 
 	async function start(e: SubmitEvent) {
 		e.preventDefault();
@@ -66,29 +64,26 @@
 {#if !loaded}
 	<!-- loading -->
 {:else}
-	{#each parties as party (party.id)}
+	{#if myParty}
 		<div class="card">
 			<p class="hostline">
 				<span class="gift"><Icon name="gift" size={22} /></span>
-				<strong>{displayName(party.expand?.host ?? {})} trakteert</strong>
+				<strong>Jij trakteert</strong>
 			</p>
-			{#if party.message}<p class="message">“{party.message}”</p>{/if}
+			{#if myParty.message}<p class="message">“{myParty.message}”</p>{/if}
 			<p class="detail">
-				Tot {new Date(party.ends).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}
+				Tot {new Date(myParty.ends).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}
 			</p>
 			<p class="detail">
-				{#if party.cap > 0}
-					{party.used ?? 0} van {party.cap} drankjes gebruikt
+				{#if myParty.cap > 0}
+					{myParty.used ?? 0} van {myParty.cap} drankjes gebruikt
 				{:else}
-					{party.used ?? 0} drankjes gebruikt, geen maximum
+					{myParty.used ?? 0} drankjes gebruikt, geen maximum
 				{/if}
 			</p>
-			{#if mayStop(party)}
-				<button class="stopbtn" onclick={() => stop(party)} disabled={busy}>Stop traktatie</button>
-			{/if}
+			<button class="stopbtn" onclick={() => stop(myParty)} disabled={busy}>Stop traktatie</button>
 		</div>
-	{/each}
-	{#if !hostsOwn}
+	{:else}
 		<p class="intro">
 			Start een traktatie: iedereen kan drankjes op jouw rekening bestellen zolang die loopt.
 		</p>
@@ -107,6 +102,30 @@
 			</label>
 			<button class="startbtn" disabled={busy}>Start traktatie</button>
 		</form>
+	{/if}
+
+	{#if isAdmin() && otherParties.length}
+		<h2>Actieve traktaties</h2>
+		{#each otherParties as party (party.id)}
+			<div class="card">
+				<p class="hostline">
+					<span class="gift"><Icon name="gift" size={22} /></span>
+					<strong>{displayName(party.expand?.host ?? {})} trakteert</strong>
+				</p>
+				{#if party.message}<p class="message">“{party.message}”</p>{/if}
+				<p class="detail">
+					Tot {new Date(party.ends).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}
+				</p>
+				<p class="detail">
+					{#if party.cap > 0}
+						{party.used ?? 0} van {party.cap} drankjes gebruikt
+					{:else}
+						{party.used ?? 0} drankjes gebruikt, geen maximum
+					{/if}
+				</p>
+				<button class="stopbtn" onclick={() => stop(party)} disabled={busy}>Stop traktatie</button>
+			</div>
+		{/each}
 	{/if}
 {/if}
 
