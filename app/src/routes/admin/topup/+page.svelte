@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { pb, displayName, euro, getSettings } from '$lib/pb';
 	import BalanceBadge from '$lib/components/BalanceBadge.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
 	const PRESETS = [5, 10, 20, 50];
 
 	let users = $state<RecordModel[]>([]);
-	let search = $state('');
+	let letter = $state('');
 	let selected = $state<RecordModel | null>(null);
 	let amountStr = $state('');
 	let negative = $state(false);
@@ -25,9 +26,8 @@
 		})();
 	});
 
-	const filtered = $derived(
-		users.filter((u) => displayName(u).toLowerCase().includes(search.toLowerCase()))
-	);
+	const letters = $derived([...new Set(users.map((u) => (u.first_name?.[0] ?? '?').toUpperCase()))]);
+	const matches = $derived(users.filter((u) => (u.first_name?.[0] ?? '?').toUpperCase() === letter));
 	const amount = $derived((negative ? -1 : 1) * (parseFloat(amountStr.replace(',', '.')) || 0));
 
 	async function commit() {
@@ -39,6 +39,7 @@
 			});
 			result = `${euro(amount)} ${amount >= 0 ? 'bijgeschreven' : 'gecorrigeerd'} op de rekening van ${displayName(selected!)}. Nieuw saldo: ${euro(res.newBalance)}.`;
 			selected = null;
+			letter = '';
 			amountStr = '';
 			negative = false;
 			confirming = false;
@@ -56,17 +57,27 @@
 {#if error}<p class="error">{error}</p>{/if}
 
 {#if !selected}
-	<div class="panel">
-		<label>Zoek rekening<input bind:value={search} placeholder="naam…" /></label>
-	</div>
-	<div class="tiles">
-		{#each filtered as u (u.id)}
-			<button class="tile" onclick={() => { selected = u; result = ''; }}>
-				{displayName(u)}
-				<BalanceBadge balance={u.balance ?? 0} yellowThreshold={yellow} />
-			</button>
-		{/each}
-	</div>
+	{#if !letter}
+		<div class="letters">
+			{#each letters as l (l)}
+				<button class="letter" onclick={() => (letter = l)}>{l}</button>
+			{/each}
+		</div>
+	{:else}
+		<button class="backlink" onclick={() => (letter = '')}>
+			<Icon name="back" size={18} /> andere letter
+		</button>
+		<div class="tiles">
+			{#each matches as u (u.id)}
+				<button class="tile" onclick={() => { selected = u; result = ''; }}>
+					{displayName(u)}
+					<BalanceBadge balance={u.balance ?? 0} yellowThreshold={yellow} />
+				</button>
+			{:else}
+				<p>Geen naam met deze letter.</p>
+			{/each}
+		</div>
+	{/if}
 {:else if !confirming}
 	<form
 		class="panel"
@@ -110,5 +121,38 @@
 <style>
 	.preset {
 		flex: 1;
+	}
+	.letters {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(3.4rem, 1fr));
+		gap: 0.6rem;
+	}
+	.letter {
+		aspect-ratio: 1;
+		font-size: 1.25rem;
+		font-weight: 700;
+		font-family: inherit;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-s);
+		background: var(--surface);
+		color: inherit;
+		cursor: pointer;
+		box-shadow: var(--shadow);
+	}
+	.letter:active {
+		transform: scale(0.95);
+	}
+	.backlink {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		background: none;
+		border: none;
+		color: var(--muted);
+		font-family: inherit;
+		font-size: 0.95rem;
+		cursor: pointer;
+		padding: 0;
+		margin-bottom: 0.9rem;
 	}
 </style>
