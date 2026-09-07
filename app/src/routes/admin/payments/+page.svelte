@@ -14,6 +14,8 @@
 		})();
 	});
 
+	// the export keeps the full detail (time, old/new balance) that the
+	// mobile-friendly table omits
 	function exportCsv() {
 		downloadCsv('betalingshistorie.csv', [
 			['Datum', 'Tijd', 'Aangenomen door', 'Rekening', 'Saldo oud', 'Saldo nieuw', 'Bedrag'],
@@ -40,24 +42,41 @@
 <div class="tablewrap">
 	<table>
 		<thead>
-			<tr>
-				<th>Datum</th><th>Aangenomen door</th><th>Rekening</th>
-				<th>Oud</th><th>Nieuw</th><th>Bedrag</th>
-			</tr>
+			<tr><th>Datum</th><th>Rekening</th><th class="num">Bedrag</th></tr>
 		</thead>
 		<tbody>
 			{#each payments as p (p.id)}
 				<tr>
-					<td>{new Date(p.created).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}</td>
-					<td>{displayName(p.expand?.admin ?? {})}</td>
-					<td>{displayName(p.expand?.user ?? {})}</td>
-					<td>{euro(p.balance_old ?? 0)}</td>
-					<td>{euro(p.balance_new ?? 0)}</td>
-					<td>{euro(p.amount ?? 0)}</td>
+					<td>{new Date(p.created).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit' })}</td>
+					<td class="who">
+						{displayName(p.expand?.user ?? {})}
+						<span class="by">door {displayName(p.expand?.admin ?? {})}</span>
+					</td>
+					<td class="num" class:neg={(p.amount ?? 0) < 0}>{euro(p.amount ?? 0)}</td>
 				</tr>
 			{:else}
-				<tr><td colspan="6">Nog geen betalingen.</td></tr>
+				<tr><td colspan="3">Nog geen betalingen.</td></tr>
 			{/each}
 		</tbody>
 	</table>
 </div>
+
+<style>
+	.who {
+		max-width: 13rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.by {
+		display: block;
+		font-size: 0.78rem;
+		color: var(--muted);
+	}
+	.num {
+		text-align: right;
+		font-weight: 600;
+	}
+	.neg {
+		color: var(--bad);
+	}
+</style>
