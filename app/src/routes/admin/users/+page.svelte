@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { pb, displayName, euro } from '$lib/pb';
 	import { downloadCsv } from '$lib/csv';
+	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
 	let users = $state<RecordModel[]>([]);
@@ -160,10 +161,16 @@
 	</form>
 
 	{#if editing}
-		<div class="row actions">
-			<a class="btnlink" href="/admin/topup?user={editing.id}">Saldo bijschrijven</a>
-			<a class="btnlink" href="/admin/payments?user={editing.id}">Betaalgeschiedenis</a>
-			<a class="btnlink" href="/admin/sales/orders?user={editing.id}">Bestelgeschiedenis</a>
+		<div class="actions">
+			<a class="action" href="/admin/topup?user={editing.id}">
+				<Icon name="euro" size={24} /> Saldo bijschrijven
+			</a>
+			<a class="action" href="/admin/payments?user={editing.id}">
+				<Icon name="receipt" size={24} /> Betaalgeschiedenis
+			</a>
+			<a class="action" href="/admin/sales/orders?user={editing.id}">
+				<Icon name="history" size={24} /> Bestelgeschiedenis
+			</a>
 		</div>
 		{#if !editing.active}
 			<button class="btn danger delete" onclick={() => remove(editing!)}>
@@ -255,10 +262,13 @@
 		font-variant-numeric: tabular-nums;
 	}
 	.actions {
-		display: flex;
-		gap: 0.7rem;
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 0.6rem;
 		margin-bottom: 1.1rem;
+	}
+	.actions > a:first-child {
+		grid-column: 1 / -1;
 	}
 	.delete {
 		margin-top: 0.4rem;

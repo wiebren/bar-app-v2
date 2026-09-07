@@ -5,6 +5,11 @@ import { PUBLIC_PB_URL } from '$env/static/public';
 // users collection this gives the "stay logged in" behaviour of the old app.
 export const pb = new PocketBase(PUBLIC_PB_URL);
 
+// The SDK aborts a pending request when another hits the same endpoint, so two
+// concurrent lists on one collection (e.g. a report + a history) silently lose
+// one result. We never re-fire identical queries, so cancellation only hurts.
+pb.autoCancellation(false);
+
 export function currentUser(): RecordModel | null {
 	return pb.authStore.record;
 }

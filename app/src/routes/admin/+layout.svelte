@@ -116,6 +116,26 @@
 		color: inherit;
 		box-shadow: var(--shadow);
 	}
+	/* big tappable action buttons, shared with the admin front page */
+	:global(a.action) {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.6rem;
+		padding: 1.1rem 1rem;
+		font-size: 1.05rem;
+		font-weight: 600;
+		text-decoration: none;
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		background: var(--surface);
+		color: inherit;
+		box-shadow: var(--shadow);
+		transition: transform 0.08s ease;
+	}
+	:global(a.action:active) {
+		transform: scale(0.97);
+	}
 	:global(button.btn:disabled) {
 		opacity: 0.5;
 	}

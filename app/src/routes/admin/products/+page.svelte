@@ -2,6 +2,7 @@
 	import { pb, euro } from '$lib/pb';
 	import { BRANDS } from '$lib/brands';
 	import BrandMark from '$lib/components/BrandMark.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
 	let products = $state<RecordModel[]>([]);
@@ -148,10 +149,16 @@
 
 	{#if editing?.stock_tracked}
 		<h2>Voorraad ({stock[editing.id] ?? 0})</h2>
-		<div class="row stockbtns">
-			<a class="btnlink" href="/admin/stock/add?product={editing.id}">Inkoop boeken</a>
-			<a class="btnlink" href="/admin/stock/count?product={editing.id}">Voorraad tellen</a>
-			<a class="btnlink" href="/admin/sales/transactions?product={editing.id}">Transacties</a>
+		<div class="stockbtns">
+			<a class="action" href="/admin/stock/add?product={editing.id}">
+				<Icon name="plus" size={24} /> Inkoop boeken
+			</a>
+			<a class="action" href="/admin/stock/count?product={editing.id}">
+				<Icon name="crate" size={24} /> Voorraad tellen
+			</a>
+			<a class="action" href="/admin/sales/transactions?product={editing.id}">
+				<Icon name="history" size={24} /> Transacties
+			</a>
 		</div>
 	{/if}
 
@@ -239,8 +246,11 @@
 		color: var(--muted);
 	}
 	.stockbtns {
-		display: flex;
-		gap: 0.7rem;
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 0.6rem;
+	}
+	.stockbtns > a:last-child {
+		grid-column: 1 / -1;
 	}
 </style>
