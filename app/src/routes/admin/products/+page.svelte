@@ -1,11 +1,20 @@
 <script lang="ts">
 	import { pb, euro } from '$lib/pb';
+	import { BRANDS } from '$lib/brands';
+	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
 	let products = $state<RecordModel[]>([]);
 	let editing = $state<RecordModel | null>(null);
 	let adding = $state(false);
-	let form = $state({ name: '', price: 0, sort_order: 1000, sellable: true, stock_tracked: true });
+	let form = $state({
+		name: '',
+		price: 0,
+		sort_order: 1000,
+		sellable: true,
+		stock_tracked: true,
+		brand: ''
+	});
 	let msg = $state('');
 	let error = $state('');
 
@@ -19,7 +28,7 @@
 	function startAdd() {
 		adding = true;
 		editing = null;
-		form = { name: '', price: 0, sort_order: 1000, sellable: true, stock_tracked: true };
+		form = { name: '', price: 0, sort_order: 1000, sellable: true, stock_tracked: true, brand: '' };
 	}
 
 	function startEdit(p: RecordModel) {
@@ -30,7 +39,8 @@
 			price: p.price,
 			sort_order: p.sort_order ?? 1000,
 			sellable: !!p.sellable,
-			stock_tracked: !!p.stock_tracked
+			stock_tracked: !!p.stock_tracked,
+			brand: p.brand ?? ''
 		};
 	}
 
@@ -76,6 +86,16 @@
 			</label>
 		</div>
 		<div class="row">
+			<label>Merk
+				<select bind:value={form.brand}>
+					<option value="">geen merk</option>
+					{#each Object.entries(BRANDS) as [key, b] (key)}
+						<option value={key}>{b.label}</option>
+					{/each}
+				</select>
+			</label>
+		</div>
+		<div class="row">
 			<label class="check"><input type="checkbox" bind:checked={form.sellable} />Verkrijgbaar op de tap</label>
 			<label class="check"><input type="checkbox" bind:checked={form.stock_tracked} />Voorraad bijhouden</label>
 		</div>
@@ -99,13 +119,28 @@
 		</thead>
 		<tbody>
 			{#each products as p (p.id)}
+				{@const brand = BRANDS[p.brand]}
 				<tr class:inactive={!p.sellable}>
 					<td>{p.sort_order}</td>
-					<td>{p.name}</td>
+					<td>
+						{p.name}
+						{#if brand}
+							<span
+								class="brandchip"
+								style:background={brand.color}
+								style:color={brand.fg}
+								title={brand.label}>{brand.initials}</span
+							>
+						{/if}
+					</td>
 					<td>{euro(p.price)}</td>
 					<td>{p.sellable ? '✔' : '—'}</td>
 					<td>{p.stock_tracked ? '✔' : '—'}</td>
-					<td><button class="link" onclick={() => startEdit(p)}>wijzig</button></td>
+					<td class="actions">
+						<button class="iconbtn small" onclick={() => startEdit(p)} aria-label="Wijzig {p.name}" title="Wijzig">
+							<Icon name="pencil" size={18} />
+						</button>
+					</td>
 				</tr>
 			{/each}
 		</tbody>
@@ -116,13 +151,22 @@
 	.inactive {
 		opacity: 0.5;
 	}
-	.link {
-		background: none;
-		border: none;
-		color: var(--ink);
-		font-family: inherit;
-		text-decoration: underline;
-		cursor: pointer;
-		padding: 0;
+	.actions {
+		text-align: right;
+	}
+	.iconbtn.small {
+		width: 2.2rem;
+		height: 2.2rem;
+	}
+	.brandchip {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.5rem;
+		height: 1.5rem;
+		border-radius: 999px;
+		font-size: 0.62rem;
+		font-weight: 800;
+		vertical-align: middle;
 	}
 </style>

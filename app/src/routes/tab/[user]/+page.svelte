@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { pb, displayName, euro, getSettings } from '$lib/pb';
+	import { BRANDS } from '$lib/brands';
 	import BalanceBadge from '$lib/components/BalanceBadge.svelte';
 	import type { RecordModel } from 'pocketbase';
 
@@ -44,9 +45,24 @@
 
 	<div class="products">
 		{#each products as p (p.id)}
-			<a class="product" href="/tab/{tabUser.id}/order/{p.id}">
-				<span class="name">{p.name}</span>
-				<span class="price">{euro(p.price)}</span>
+			{@const brand = BRANDS[p.brand]}
+			<a
+				class="product"
+				href="/tab/{tabUser.id}/order/{p.id}"
+				style:border-left={brand ? `5px solid ${brand.color}` : undefined}
+			>
+				<span class="text">
+					<span class="name">{p.name}</span>
+					<span class="price">{euro(p.price)}</span>
+				</span>
+				{#if brand}
+					<span
+						class="brandchip"
+						style:background={brand.color}
+						style:color={brand.fg}
+						title={brand.label}>{brand.initials}</span
+					>
+				{/if}
 			</a>
 		{/each}
 	</div>
@@ -99,8 +115,9 @@
 	}
 	.product {
 		display: flex;
-		flex-direction: column;
-		gap: 0.15rem;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.5rem;
 		padding: 0.9rem 1rem;
 		border: 1px solid var(--line);
 		border-radius: var(--radius);
@@ -108,6 +125,24 @@
 		box-shadow: var(--shadow);
 		text-decoration: none;
 		transition: transform 0.08s ease;
+	}
+	.text {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		min-width: 0;
+	}
+	.brandchip {
+		flex-shrink: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 999px;
+		font-size: 0.72rem;
+		font-weight: 800;
+		letter-spacing: 0.02em;
 	}
 	.product:active {
 		transform: scale(0.97);
