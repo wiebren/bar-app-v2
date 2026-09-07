@@ -2,12 +2,12 @@
 	import { pb, euro } from '$lib/pb';
 
 	const sections = [
+		{ href: '/admin/topup', label: 'Saldo bijschrijven' },
+		{ href: '/admin/stock', label: 'Voorraad' },
 		{ href: '/admin/users', label: 'Rekeningen' },
 		{ href: '/admin/products', label: 'Producten' },
-		{ href: '/admin/topup', label: 'Saldo bijschrijven' },
 		{ href: '/admin/payments', label: 'Betalingshistorie' },
 		{ href: '/admin/sales', label: 'Verkoop & rapporten' },
-		{ href: '/admin/stock', label: 'Voorraad' },
 		{ href: '/admin/mail', label: 'Saldo-mails' },
 		{ href: '/admin/settings', label: 'Instellingen' }
 	];
