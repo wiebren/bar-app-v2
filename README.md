@@ -23,16 +23,19 @@ PWA from `pb_public/`. One process, no Node on the server, deploys are
   optional message, drink cap, and duration (1–24h). While rounds run, the
   order confirmation offers "on <host>'s tab" per active round; multiple
   rounds can run at once (one per host). The host or an admin can stop early.
-- **Top-up by QR** — the app renders an EPC069-12 (SEPA credit transfer) QR
-  code with the club's IBAN and a fixed remittance text; members scan it with
-  their banking app. An admin books the payment when reconciling the bank
-  statement.
+- **Top-up** — pick an amount, then use whichever route the admin configured.
+  *Vraag Tikkie* opens WhatsApp with a prefilled message to the treasurer's
+  number, which works on the phone the app already runs on; the EPC069-12
+  (SEPA credit transfer) QR code, built from the club's IBAN and a fixed
+  remittance text, is there for scanning from a second device. Each route
+  hides itself when unconfigured, and the menu entry disappears when neither
+  is set. An admin books the payment when reconciling the bank statement.
 - **Balance emails** — a red-alert mail when a tab crosses the configured
   threshold, admin-triggered debtor mails (with preview), and an optional
   daily digest of each member's orders — flagging ones booked by someone else.
 - **Admin** — products (with stock tracking), users, top-up booking, stock
   deliveries and counts, sales reports, mail templates, and app settings
-  (title, thresholds, IBAN, digest) — all in-app; the PocketBase admin UI is
+  (title, thresholds, top-up routes, digest) — all in-app; the PocketBase admin UI is
   only needed for initial setup.
 - **Installable PWA** — add-to-homescreen till behaviour, including a
   stale-build reload check when iOS resumes a docked app.
@@ -81,7 +84,7 @@ server-managed — API rules reject client writes.
 
 4. Log in to the app with that admin account and finish configuration under
    **Beheer → Instellingen** (title, thresholds, IBAN + account holder for the
-   top-up QR, mail templates).
+   top-up QR, WhatsApp number for Tikkie requests, mail templates).
 
 ### Production
 

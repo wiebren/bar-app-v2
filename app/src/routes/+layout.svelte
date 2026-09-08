@@ -2,6 +2,7 @@
 	import { page, updated } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { pb, isAdmin, getSettings } from '$lib/pb';
+	import { hasQrTopup, hasTikkieTopup } from '$lib/topup';
 	import Icon from '$lib/components/Icon.svelte';
 	import { onMount } from 'svelte';
 
@@ -9,6 +10,8 @@
 	let title = $state('Bar-app');
 	let ready = $state(false);
 	let menuOpen = $state(false);
+	// hidden until an admin configures at least one top-up route
+	let canTopup = $state(false);
 
 	onMount(async () => {
 		if (!pb.authStore.isValid && page.url.pathname !== '/login') {
@@ -29,9 +32,11 @@
 				}
 			}
 			try {
-				title = (await getSettings()).app_title || 'Bar-app';
+				const s = await getSettings();
+				title = s.app_title || 'Bar-app';
+				canTopup = hasQrTopup(s) || hasTikkieTopup(s);
 			} catch {
-				// offline — keep the default title
+				// offline — keep the default title, and no QR without settings
 			}
 		}
 		ready = true;
@@ -79,9 +84,11 @@
 					>
 						<Icon name="users" />
 					</a>
-					<a href="/topup" class="iconbtn" aria-label="Opwaarderen" title="Opwaarderen">
-						<Icon name="qr" />
-					</a>
+					{#if canTopup}
+						<a href="/topup" class="iconbtn" aria-label="Opwaarderen" title="Opwaarderen">
+							<Icon name="qr" />
+						</a>
+					{/if}
 					{#if isAdmin()}
 						<a href="/admin" class="iconbtn" aria-label="Beheer" title="Beheer">
 							<Icon name="wrench" />

@@ -33,6 +33,12 @@
 	:global(.panel h2) {
 		margin: 0.2rem 0;
 	}
+	/* explanatory line under a section heading */
+	:global(.panel p.sub) {
+		margin: -0.35rem 0 0;
+		font-size: 0.85rem;
+		color: var(--muted);
+	}
 	:global(.panel label) {
 		display: flex;
 		flex-direction: column;
