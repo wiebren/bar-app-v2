@@ -1,0 +1,12 @@
+node_modules/
+# dumps, snapshots and reports hold member names, emails and balances -
+# never commit them
+*.json
+*.sql
+!package.json
+!package-lock.json
+
+# a real PocketBase database may sit here during a migration
+data.db
+data.db-*
+*.pre-migration-*

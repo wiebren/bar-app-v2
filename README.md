@@ -52,8 +52,18 @@ server-managed — API rules reject client writes.
 │   ├── pb_hooks/       #   server logic: routes, cron, guards
 │   └── pb_public/      #   committed SvelteKit build (served by PocketBase)
 ├── app/                # SvelteKit PWA source
-└── deploy/             # example nginx + supervisor configs, PB fetch script
+├── deploy/             # example nginx + supervisor configs, PB fetch script
+└── tools/migrate/      # one-time importer for the legacy PHP/MySQL bar-app
 ```
+
+### Migrating from the old PHP/MySQL bar-app
+
+`tools/migrate/` lifts an existing `bar_app` MySQL database into PocketBase —
+members and balances, products, the full sale and payment history, and the
+stock ledger, with original timestamps preserved. It exports to a JSON
+snapshot first, has a `--dry-run` that reports before it commits, and backs up
+`data.db` before writing. See [tools/migrate/README.md](tools/migrate/README.md)
+for the runbook and the mapping decisions.
 
 ## Installing
 
