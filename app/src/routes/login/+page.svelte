@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import { pb } from '$lib/pb';
 	import { onMount } from 'svelte';
 
@@ -8,7 +7,6 @@
 	let otpId = $state('');
 	let error = $state('');
 	let busy = $state(false);
-	let autoLogin = $state(false);
 
 	// "Zet op je beginscherm" — only shown in a mobile browser, not when the
 	// app already runs docked from the home screen.
@@ -51,26 +49,6 @@
 		installEvent = null;
 	}
 
-	// the login button in the OTP mail links to /login?otpId=...&code=...
-	onMount(async () => {
-		const linkOtpId = page.url.searchParams.get('otpId');
-		const linkCode = page.url.searchParams.get('code');
-		if (!linkOtpId || !linkCode) return;
-		autoLogin = true;
-		try {
-			await pb.collection('users').authWithOTP(linkOtpId, linkCode);
-			location.href = '/';
-			return;
-		} catch (err) {
-			// the server refuses deactivated accounts with a 403
-			error =
-				(err as { status?: number }).status === 403
-					? 'Je bent niet meer actief binnen de bar-app. Vraag activatie aan de beheerders.'
-					: 'Ongeldige of verlopen inloglink. Vraag hieronder een nieuwe code aan.';
-		}
-		autoLogin = false;
-	});
-
 	async function requestCode(e: SubmitEvent) {
 		e.preventDefault();
 		busy = true;
@@ -106,9 +84,7 @@
 		<img src="/icon-192.png" alt="" class="logo" />
 		<h1>Inloggen</h1>
 
-		{#if autoLogin}
-			<p class="hint">Bezig met inloggen…</p>
-		{:else if !otpId}
+		{#if !otpId}
 			<p class="hint">Vul je e-mailadres in, je ontvangt een e-mail om in te loggen.</p>
 			<form onsubmit={requestCode}>
 				<label for="email">E-mailadres</label>
@@ -117,8 +93,8 @@
 			</form>
 		{:else}
 			<p class="hint">
-				We hebben een e-mail gestuurd naar <strong>{email}</strong>. Klik op de knop in de mail, of
-				vul hier de code in.
+				We hebben een e-mail gestuurd naar <strong>{email}</strong>. Vul hier de code uit de mail
+				in.
 			</p>
 			<form onsubmit={verify}>
 				<label for="code">Code</label>

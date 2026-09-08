@@ -12,8 +12,8 @@ PWA from `pb_public/`. One process, no Node on the server, deploys are
 
 ## Features
 
-- **Passwordless login** — email OTP (code or one-click link), sessions last a
-  year. No passwords exist anywhere.
+- **Passwordless login** — email OTP code, sessions last a year. No passwords
+  exist anywhere.
 - **Personal tab** — product grid with brand accents, tap → quantity →
   confirm; shows old → new balance with yellow/red warning thresholds.
 - **Strepen voor een ander** — a one-time "I'm marking for…" flow via a
