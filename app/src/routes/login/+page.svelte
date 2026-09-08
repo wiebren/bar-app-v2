@@ -10,6 +10,47 @@
 	let busy = $state(false);
 	let autoLogin = $state(false);
 
+	// "Zet op je beginscherm" — only shown in a mobile browser, not when the
+	// app already runs docked from the home screen.
+	type InstallPromptEvent = Event & { prompt: () => Promise<void> };
+	let installEvent = $state<InstallPromptEvent | null>(null);
+	let iosInstallable = $state(false);
+	let iosHintOpen = $state(false);
+
+	onMount(() => {
+		const docked =
+			window.matchMedia('(display-mode: standalone)').matches ||
+			(navigator as { standalone?: boolean }).standalone === true;
+		const mobile = window.matchMedia('(pointer: coarse)').matches;
+		if (docked || !mobile) return;
+
+		// iPadOS masquerades as macOS but has a touch screen
+		const ios =
+			/iPhone|iPad|iPod/.test(navigator.userAgent) ||
+			(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+		iosInstallable = ios;
+
+		// Chrome/Edge on Android announce installability with this event;
+		// capturing it lets our own button open the native install dialog
+		const onPrompt = (e: Event) => {
+			e.preventDefault();
+			installEvent = e as InstallPromptEvent;
+		};
+		const onInstalled = () => (installEvent = null);
+		window.addEventListener('beforeinstallprompt', onPrompt);
+		window.addEventListener('appinstalled', onInstalled);
+		return () => {
+			window.removeEventListener('beforeinstallprompt', onPrompt);
+			window.removeEventListener('appinstalled', onInstalled);
+		};
+	});
+
+	async function install() {
+		if (!installEvent) return;
+		await installEvent.prompt();
+		installEvent = null;
+	}
+
 	// the login button in the OTP mail links to /login?otpId=...&code=...
 	onMount(async () => {
 		const linkOtpId = page.url.searchParams.get('otpId');
@@ -88,13 +129,58 @@
 
 		{#if error}<p class="error">{error}</p>{/if}
 	</div>
+
+	{#if installEvent || iosInstallable}
+		<div class="install">
+			{#if installEvent}
+				<button class="install-btn" onclick={install}>
+					<span aria-hidden="true">📲</span> Zet de app op je beginscherm
+				</button>
+			{:else}
+				<button class="install-btn" onclick={() => (iosHintOpen = !iosHintOpen)}>
+					<span aria-hidden="true">📲</span> Zet de app op je beginscherm
+				</button>
+				{#if iosHintOpen}
+					<p class="install-hint">
+						Tik in Safari op de deelknop <span aria-hidden="true">(het vierkantje met de pijl
+						omhoog)</span> en kies <strong>‘Zet op beginscherm’</strong>.
+					</p>
+				{/if}
+			{/if}
+		</div>
+	{/if}
 </div>
 
 <style>
 	.wrap {
 		display: flex;
-		justify-content: center;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.8rem;
 		padding-top: 8vh;
+	}
+	.install {
+		width: 100%;
+		max-width: 22rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	.install-btn {
+		padding: 0.7rem;
+		font-size: 0.95rem;
+		font-weight: 600;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-s);
+		background: var(--surface);
+		color: var(--ink);
+		cursor: pointer;
+	}
+	.install-hint {
+		margin: 0;
+		font-size: 0.9rem;
+		color: var(--muted);
+		text-align: center;
 	}
 	.card {
 		width: 100%;
