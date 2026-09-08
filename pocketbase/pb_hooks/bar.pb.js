@@ -73,7 +73,9 @@ routerAdd(
 				// low-stock alert: crossing-only, like the red alert below
 				const level = product.getInt('notify_level');
 				if (level > 0) {
-					const row = new DynamicModel({ total: 0 });
+					// float zero value: qty is NUMERIC and deliveries can be fractional, and
+					// an int-typed field fails to scan a fractional SUM (see /api/bar/topup)
+					const row = new DynamicModel({ total: 0.1 });
 					tx.db()
 						.newQuery('SELECT COALESCE(SUM(qty), 0) AS total FROM stock_entries WHERE product = {:p}')
 						.bind({ p: product.id })
@@ -128,7 +130,11 @@ routerAdd(
 		const utils = require(`${__hooks}/bar_utils.js`);
 		utils.requireActiveAdmin(e);
 
-		const data = new DynamicModel({ user: '', amount: 0 });
+		// 0.1, not 0: DynamicModel takes the Go field type from the zero value it
+		// is handed, so an integer literal makes `amount` an int — a top-up of
+		// 12.50 then fails to bind and 400s while whole euros go through. Any
+		// non-integer works; bindBody overwrites the value itself.
+		const data = new DynamicModel({ user: '', amount: 0.1 });
 		e.bindBody(data);
 		const amount = utils.round2(Number(data.amount));
 		if (!amount || !isFinite(amount)) throw new BadRequestError('Ongeldig bedrag.');
@@ -199,7 +205,9 @@ routerAdd(
 		let lowStock = null;
 		e.app.runInTransaction((tx) => {
 			const product = tx.findRecordById('products', data.product);
-			const row = new DynamicModel({ total: 0 });
+			// float zero value: qty is NUMERIC and deliveries can be fractional, and
+			// an int-typed field fails to scan a fractional SUM (see /api/bar/topup)
+			const row = new DynamicModel({ total: 0.1 });
 			tx.db()
 				.newQuery('SELECT COALESCE(SUM(qty), 0) AS total FROM stock_entries WHERE product = {:p}')
 				.bind({ p: product.id })
@@ -350,7 +358,8 @@ cronAdd('daily-digest', '30 21 * * *', () => {
 		since.setUTCMonth(since.getUTCMonth() - 3);
 		const sinceStr = since.toISOString().replace('T', ' ');
 
-		const rows = arrayOf(new DynamicModel({ product: '', total: 0, added: 0 }));
+		// float zero values: a fractional SUM will not scan into an int field
+		const rows = arrayOf(new DynamicModel({ product: '', total: 0.1, added: 0.1 }));
 		$app
 			.db()
 			.newQuery(
