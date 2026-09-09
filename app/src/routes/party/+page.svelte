@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page as route } from '$app/state';
 	import { pb, displayName, isAdmin, getActiveParties } from '$lib/pb';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
@@ -10,6 +11,14 @@
 	let hours = $state(8);
 	let busy = $state(false);
 	let error = $state('');
+	// ?host=… (from the admin account screen) opens a round on that member's
+	// tab instead of your own — admins only; the hook enforces the same rule
+	let host = $state<RecordModel | null>(null);
+
+	const hostId = $derived(isAdmin() ? (route.url.searchParams.get('host') ?? '') : '');
+	const forSelf = $derived(!hostId || hostId === pb.authStore.record?.id);
+	const tabId = $derived(forSelf ? (pb.authStore.record?.id ?? '') : hostId);
+	const hostName = $derived(host ? displayName(host) : '');
 
 	async function refresh() {
 		parties = await getActiveParties();
@@ -20,10 +29,23 @@
 		refresh();
 	});
 
-	// this page is about YOUR treat state; other hosts' parties only appear in
-	// the admin management list below
-	const myParty = $derived(parties.find((p) => p.host === pb.authStore.record?.id) ?? null);
-	const otherParties = $derived(parties.filter((p) => p.host !== pb.authStore.record?.id));
+	$effect(() => {
+		const id = hostId;
+		host = null;
+		if (!id) return;
+		(async () => {
+			try {
+				host = await pb.collection('users').getOne(id);
+			} catch {
+				error = 'Rekening niet gevonden.';
+			}
+		})();
+	});
+
+	// this page is about ONE tab's treat state; every other host's party only
+	// appears in the admin management list below
+	const tabParty = $derived(parties.find((p) => p.host === tabId) ?? null);
+	const otherParties = $derived(parties.filter((p) => p.host !== tabId));
 
 	async function start(e: SubmitEvent) {
 		e.preventDefault();
@@ -32,7 +54,7 @@
 		try {
 			await pb.send('/api/bar/party', {
 				method: 'POST',
-				body: { message, cap: parseInt(capStr) || 0, hours }
+				body: { message, cap: parseInt(capStr) || 0, hours, host: tabId }
 			});
 			message = '';
 			capStr = '';
@@ -57,35 +79,40 @@
 	}
 </script>
 
-<h1>Ik trakteer</h1>
+<h1>{forSelf ? 'Ik trakteer' : 'Traktatie namens een lid'}</h1>
 
 {#if error}<p class="error">{error}</p>{/if}
 
 {#if !loaded}
 	<!-- loading -->
 {:else}
-	{#if myParty}
+	{#if tabParty}
 		<div class="card">
 			<p class="hostline">
 				<span class="gift"><Icon name="gift" size={22} /></span>
-				<strong>Jij trakteert</strong>
+				<strong>{forSelf ? 'Jij trakteert' : `${hostName} trakteert`}</strong>
 			</p>
-			{#if myParty.message}<p class="message">“{myParty.message}”</p>{/if}
+			{#if tabParty.message}<p class="message">“{tabParty.message}”</p>{/if}
 			<p class="detail">
-				Tot {new Date(myParty.ends).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}
+				Tot {new Date(tabParty.ends).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}
 			</p>
 			<p class="detail">
-				{#if myParty.cap > 0}
-					{myParty.used ?? 0} van {myParty.cap} drankjes gebruikt
+				{#if tabParty.cap > 0}
+					{tabParty.used ?? 0} van {tabParty.cap} drankjes gebruikt
 				{:else}
-					{myParty.used ?? 0} drankjes gebruikt, geen maximum
+					{tabParty.used ?? 0} drankjes gebruikt, geen maximum
 				{/if}
 			</p>
-			<button class="stopbtn" onclick={() => stop(myParty)} disabled={busy}>Stop traktatie</button>
+			<button class="stopbtn" onclick={() => stop(tabParty)} disabled={busy}>Stop traktatie</button>
 		</div>
 	{:else}
 		<p class="intro">
-			Start een traktatie: iedereen kan drankjes op jouw rekening bestellen zolang die loopt.
+			{#if forSelf}
+				Start een traktatie: iedereen kan drankjes op jouw rekening bestellen zolang die loopt.
+			{:else}
+				Start een traktatie namens {hostName || 'dit lid'}: iedereen kan drankjes op die rekening
+				bestellen zolang de traktatie loopt.
+			{/if}
 		</p>
 		<form class="card form" onsubmit={start}>
 			<label>

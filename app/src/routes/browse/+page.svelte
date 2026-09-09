@@ -11,8 +11,10 @@
 	$effect(() => {
 		(async () => {
 			yellow = (await getSettings()).yellow_threshold ?? 0;
+			// accounts that switched off "strepen voor een ander" stay out of the
+			// grid; the order hook rejects them too
 			users = await pb.collection('users').getFullList({
-				filter: 'active = true',
+				filter: 'active = true && block_others != true',
 				sort: 'first_name,last_name'
 			});
 		})();

@@ -44,6 +44,11 @@ routerAdd(
 
 			const tabUser = tx.findRecordById('users', chargedUser);
 			if (!tabUser.getBool('active')) throw new BadRequestError('Rekening niet actief.');
+			// "strepen voor een ander" respects the tab owner's switch; a treat
+			// round is the host's own invitation, so it ignores it
+			if (!data.party && tabUser.id !== e.auth.id && tabUser.getBool('block_others')) {
+				throw new BadRequestError('Deze rekening staat strepen door anderen niet toe.');
+			}
 
 			const price = product.getFloat('price');
 			const total = utils.round2(price * qty);
@@ -255,7 +260,7 @@ routerAdd(
 	(e) => {
 		require(`${__hooks}/bar_utils.js`).requireActive(e);
 
-		const data = new DynamicModel({ message: '', cap: 0, hours: 0 });
+		const data = new DynamicModel({ message: '', cap: 0, hours: 0, host: '' });
 		e.bindBody(data);
 		const hours = Number(data.hours);
 		const cap = Number(data.cap);
@@ -264,16 +269,26 @@ routerAdd(
 		}
 		if (!Number.isInteger(cap) || cap < 0) throw new BadRequestError('Ongeldig maximum.');
 
+		// an admin can open a round on someone else's tab: the member is at the
+		// bar, not on their phone. Everyone else hosts their own.
+		let hostId = e.auth.id;
+		if (data.host && String(data.host) !== e.auth.id) {
+			require(`${__hooks}/bar_utils.js`).requireActiveAdmin(e);
+			const host = e.app.findRecordById('users', String(data.host));
+			if (!host.getBool('active')) throw new BadRequestError('Rekening niet actief.');
+			hostId = host.id;
+		}
+
 		// multiple parties may run at once, but one per host at a time
 		const now = new Date().toISOString().replace('T', ' ');
 		const own = e.app.findRecordsByFilter('parties', 'ends > {:now} && host = {:host}', '', 1, 0, {
 			now: now,
-			host: e.auth.id
+			host: hostId
 		});
-		if (own.length) throw new BadRequestError('Je hebt al een traktatie lopen.');
+		if (own.length) throw new BadRequestError('Deze rekening heeft al een traktatie lopen.');
 
 		const party = new Record(e.app.findCollectionByNameOrId('parties'));
-		party.set('host', e.auth.id);
+		party.set('host', hostId);
 		party.set('message', String(data.message ?? '').slice(0, 100));
 		party.set('cap', cap);
 		party.set('used', 0);

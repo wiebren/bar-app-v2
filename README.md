@@ -18,11 +18,15 @@ PWA from `pb_public/`. One process, no Node on the server, deploys are
   confirm; shows old → new balance with yellow/red warning thresholds.
 - **Strepen voor een ander** — a one-time "I'm marking for…" flow via a
   first-letter name grid. Your login stays your own; the order records who
-  booked it and you return to your own tab afterwards.
+  booked it and you return to your own tab afterwards. An account can switch
+  this off for itself (admin screen), which hides it from the grid and makes
+  the server refuse the order — treat rounds ignore the switch.
 - **Ik trakteer (party mode)** — anyone can start a treat round with an
   optional message, drink cap, and duration (1–24h). While rounds run, the
   order confirmation offers "on <host>'s tab" per active round; multiple
-  rounds can run at once (one per host). The host or an admin can stop early.
+  rounds can run at once (one per host). The host or an admin can stop early,
+  and an admin can open a round on a member's tab from that member's account
+  screen.
 - **Top-up** — pick an amount, then use whichever route the admin configured.
   *Vraag Tikkie* opens WhatsApp with a prefilled message to the treasurer's
   number, which works on the phone the app already runs on; the EPC069-12

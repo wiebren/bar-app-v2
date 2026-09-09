@@ -20,16 +20,12 @@
 
 	$effect(() => {
 		(async () => {
-			const users = await pb.collection('users').getFullList({ fields: 'balance,active' });
+			const users = await pb.collection('users').getFullList({ fields: 'balance' });
 			const totalBalance = users.reduce((s, u) => s + (u.balance ?? 0), 0);
 			const debt = users.reduce((s, u) => s + Math.min(u.balance ?? 0, 0), 0);
 			figures = [
 				{ label: 'Totaal saldi', value: euro(totalBalance) },
-				{ label: 'Openstaande schuld', value: euro(debt) },
-				{
-					label: 'Leden (actief)',
-					value: `${users.length} (${users.filter((u) => u.active).length})`
-				}
+				{ label: 'Openstaande schuld', value: euro(debt) }
 			];
 		})();
 	});
@@ -70,6 +66,13 @@
 	}
 	.actions > a:first-child {
 		grid-column: 1 / -1;
+	}
+	/* two columns need ~390px of content; below that the labels push the
+	   grid wider than the page instead of wrapping */
+	@media (max-width: 28rem) {
+		.actions {
+			grid-template-columns: 1fr;
+		}
 	}
 	.figures {
 		display: grid;

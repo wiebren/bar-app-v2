@@ -4,29 +4,57 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import type { RecordModel } from 'pocketbase';
 
+	const views = [
+		['actief', 'Actief'],
+		['rood', 'Staat rood'],
+		['inactief', 'Inactief']
+	] as const;
+	// "rood" matches the debtor mails in pb_hooks: active accounts below zero
+	const viewFilters: Record<string, string> = {
+		actief: 'active = true',
+		rood: 'active = true && balance < 0',
+		inactief: 'active = false'
+	};
+
 	let users = $state<RecordModel[]>([]);
-	let showInactive = $state(false);
+	let view = $state<string>('actief');
 	let editing = $state<RecordModel | null>(null);
 	let adding = $state(false);
-	let form = $state({ first_name: '', infix: '', last_name: '', email: '', phone: '', active: true, role: 'user' });
+	let form = $state({
+		first_name: '',
+		infix: '',
+		last_name: '',
+		email: '',
+		active: true,
+		role: 'user',
+		block_others: false
+	});
 	let msg = $state('');
 	let error = $state('');
 
 	async function load() {
 		users = await pb.collection('users').getFullList({
-			filter: showInactive ? '' : 'active = true',
+			filter: viewFilters[view],
 			sort: 'first_name,last_name'
 		});
 	}
 	$effect(() => {
-		void showInactive; // reload when the toggle changes
+		void view; // reload when the filter changes
 		load();
 	});
 
 	function startAdd() {
 		adding = true;
 		editing = null;
-		form = { first_name: '', infix: '', last_name: '', email: '', phone: '', active: true, role: 'user' };
+		form = {
+			first_name: '',
+			infix: '',
+			last_name: '',
+			email: '',
+			active: true,
+			role: 'user',
+			block_others: false
+		};
 		msg = '';
 		error = '';
 	}
@@ -39,9 +67,9 @@
 			infix: u.infix ?? '',
 			last_name: u.last_name ?? '',
 			email: u.email ?? '',
-			phone: u.phone ?? '',
 			active: !!u.active,
-			role: u.role ?? 'user'
+			role: u.role ?? 'user',
+			block_others: !!u.block_others
 		};
 		msg = '';
 		error = '';
@@ -139,10 +167,15 @@
 			<label>Tussenvoegsel<input bind:value={form.infix} /></label>
 			<label>Achternaam<input bind:value={form.last_name} required /></label>
 		</div>
-		<div class="row">
-			<label>E-mailadres<input type="email" bind:value={form.email} required /></label>
-			<label>Telefoon<input bind:value={form.phone} /></label>
-		</div>
+		<label>E-mailadres<input type="email" bind:value={form.email} required /></label>
+		<label class="check">
+			<input
+				type="checkbox"
+				checked={!form.block_others}
+				onchange={(e) => (form.block_others = !e.currentTarget.checked)}
+			/>
+			Anderen mogen op deze rekening strepen
+		</label>
 		<div class="row">
 			<label class="check"><input type="checkbox" bind:checked={form.active} />Actief</label>
 			<label>Rol
@@ -171,6 +204,11 @@
 			<a class="action" href="/admin/sales/orders?user={editing.id}">
 				<Icon name="history" size={24} /> Bestelgeschiedenis
 			</a>
+			{#if editing.active}
+				<a class="action" href="/party?host={editing.id}">
+					<Icon name="gift" size={24} /> Traktatie starten
+				</a>
+			{/if}
 		</div>
 		{#if !editing.active}
 			<button class="btn danger delete" onclick={() => remove(editing!)}>
@@ -190,37 +228,42 @@
 	{#if msg}<p class="msg">{msg}</p>{/if}
 	{#if error}<p class="error">{error}</p>{/if}
 
-	<label class="toggle">
-		<input type="checkbox" bind:checked={showInactive} />
-		toon ook inactieve rekeningen
-	</label>
-
-	<div class="tablewrap">
-		<table>
-			<thead>
-				<tr><th>Naam</th><th>Saldo</th></tr>
-			</thead>
-			<tbody>
-				{#each users as u (u.id)}
-					<tr
-						class="clickable"
-						class:inactive={!u.active}
-						role="button"
-						tabindex="0"
-						onclick={() => startEdit(u)}
-						onkeydown={(e) => rowKey(e, u)}
-					>
-						<td class="name">
-							{displayName(u)}
-							{#if u.role === 'admin'}<span class="chip">beheerder</span>{/if}
-							{#if showInactive && !u.active}<span class="chip off">inactief</span>{/if}
-						</td>
-						<td>{euro(u.balance ?? 0)}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
+	<div class="seg" role="group" aria-label="Welke rekeningen">
+		{#each views as [value, label] (value)}
+			<button type="button" class:active={view === value} onclick={() => (view = value)}>
+				{label}
+			</button>
+		{/each}
 	</div>
+
+	{#if users.length}
+		<div class="tablewrap">
+			<table>
+				<thead>
+					<tr><th>Naam</th><th>Saldo</th></tr>
+				</thead>
+				<tbody>
+					{#each users as u (u.id)}
+						<tr
+							class="clickable"
+							role="button"
+							tabindex="0"
+							onclick={() => startEdit(u)}
+							onkeydown={(e) => rowKey(e, u)}
+						>
+							<td class="name">
+								{displayName(u)}
+								{#if u.role === 'admin'}<span class="chip">beheerder</span>{/if}
+							</td>
+							<td>{euro(u.balance ?? 0)}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{:else}
+		<p class="none">Geen rekeningen in deze weergave.</p>
+	{/if}
 {/if}
 
 <style>
@@ -236,17 +279,33 @@
 	.clickable:focus-visible td {
 		background: var(--bg);
 	}
-	.inactive {
-		opacity: 0.55;
-	}
-	.toggle {
-		display: inline-flex;
-		align-items: center;
+	/* same pill filter as the voorraadtransacties screen */
+	.seg {
+		display: flex;
 		gap: 0.4rem;
+		flex-wrap: wrap;
 		margin-top: 0.9rem;
+	}
+	.seg button {
+		padding: 0.45rem 0.9rem;
 		font-size: 0.9rem;
+		font-weight: 600;
+		font-family: inherit;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		background: var(--surface);
 		color: var(--muted);
 		cursor: pointer;
+	}
+	.seg button.active {
+		background: var(--ink);
+		border-color: var(--ink);
+		color: var(--surface);
+	}
+	.none {
+		font-size: 0.92rem;
+		color: var(--muted);
+		margin: 0.9rem 0;
 	}
 	.name {
 		max-width: 14rem;
@@ -261,20 +320,14 @@
 		color: var(--ink);
 		font-variant-numeric: tabular-nums;
 	}
+	/* one per row: "Betaalgeschiedenis" alone outgrows half a phone screen,
+	   and a two-column grid would widen past the page instead of wrapping */
 	.actions {
 		display: grid;
-		grid-template-columns: repeat(2, 1fr);
 		gap: 0.6rem;
 		margin-bottom: 1.1rem;
 	}
-	.actions > a:first-child {
-		grid-column: 1 / -1;
-	}
 	.delete {
 		margin-top: 0.4rem;
-	}
-	.chip.off {
-		background: color-mix(in srgb, var(--muted) 14%, transparent);
-		color: var(--muted);
 	}
 </style>
