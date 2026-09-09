@@ -76,14 +76,6 @@
 					{title}
 				</a>
 				<nav>
-					<a
-						href="/browse"
-						class="iconbtn"
-						aria-label="Strepen voor een ander"
-						title="Strepen voor een ander"
-					>
-						<Icon name="users" />
-					</a>
 					{#if canTopup}
 						<a href="/topup" class="iconbtn" aria-label="Opwaarderen" title="Opwaarderen">
 							<Icon name="qr" />

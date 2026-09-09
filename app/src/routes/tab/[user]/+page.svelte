@@ -12,7 +12,7 @@
 	let lastPayment = $state<RecordModel | null>(null);
 	let yellow = $state(0);
 
-	// re-runs when the route param changes (switching tabs via /browse)
+	// re-runs when the route param changes
 	$effect(() => {
 		const id = page.params.user!;
 		(async () => {

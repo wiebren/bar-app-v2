@@ -14,13 +14,16 @@ PWA from `pb_public/`. One process, no Node on the server, deploys are
 
 - **Passwordless login** — email OTP code, sessions last a year. No passwords
   exist anywhere.
-- **Personal tab** — product grid with brand accents, tap → quantity →
-  confirm; shows old → new balance with yellow/red warning thresholds.
-- **Strepen voor een ander** — a one-time "I'm marking for…" flow via a
-  first-letter name grid. Your login stays your own; the order records who
-  booked it and you return to your own tab afterwards. An account can switch
-  this off for itself (admin screen), which hides it from the grid and makes
-  the server refuse the order — treat rounds ignore the switch.
+- **Personal tab** — product grid with brand accents. Picking one opens a
+  single order screen: product, amount bar, and confirmation together, showing
+  old → new balance with yellow/red warning thresholds.
+- **Strepen voor een ander** — the order screen carries a first-letter name
+  grid under the confirmation: pick the drink and the amount on your own tab,
+  then charge someone else without losing what you picked. Your login stays
+  your own; the order records who booked it and you return to your own tab
+  afterwards. An account can switch this off for itself (admin screen), which
+  hides it from the grid and makes the server refuse the order — treat rounds
+  ignore the switch.
 - **Ik trakteer (party mode)** — anyone can start a treat round with an
   optional message, drink cap, and duration (1–24h). While rounds run, the
   order confirmation offers "on <host>'s tab" per active round; multiple
