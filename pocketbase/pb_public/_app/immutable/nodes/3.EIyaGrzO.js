@@ -1,0 +1,1 @@
+import{X as e,Z as t,n}from"../chunks/HJ1oWdrJ.js";import{t as r}from"../chunks/GSn0BaQ1.js";import"../chunks/xihTtKlq.js";import"../chunks/Cepfv2C_.js";import{s as i}from"../chunks/2JyO8qVr.js";function a(a,o){t(o,!0),n(()=>{let e=i.authStore.record?.id;r(e?`/tab/${e}`:`/login`,{replaceState:!0})}),e()}export{a as component};
