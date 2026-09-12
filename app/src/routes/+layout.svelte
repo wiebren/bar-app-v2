@@ -4,9 +4,17 @@
 	import { pb, isAdmin, getSettings } from '$lib/pb';
 	import { hasQrTopup, hasTikkieTopup } from '$lib/topup';
 	import Icon from '$lib/components/Icon.svelte';
+	import { applyTheme, storedTheme, type Theme } from '$lib/theme';
 	import { onMount } from 'svelte';
 
+	const THEMES: { key: Theme; label: string; icon: string }[] = [
+		{ key: 'auto', label: 'Auto', icon: 'contrast' },
+		{ key: 'light', label: 'Licht', icon: 'sun' },
+		{ key: 'dark', label: 'Donker', icon: 'moon' }
+	];
+
 	let { children } = $props();
+	let theme = $state<Theme>('auto');
 	let title = $state('Bar-app');
 	let ready = $state(false);
 	let menuOpen = $state(false);
@@ -41,6 +49,22 @@
 		}
 		ready = true;
 	});
+
+	onMount(() => {
+		theme = storedTheme();
+		// on 'auto' the CSS follows the system by itself; this only keeps the
+		// PWA status-bar colour in step when the system flips while we run
+		const mq = window.matchMedia('(prefers-color-scheme: dark)');
+		const follow = () => theme === 'auto' && applyTheme('auto', false);
+		mq.addEventListener('change', follow);
+		return () => mq.removeEventListener('change', follow);
+	});
+
+	function pickTheme(t: Theme) {
+		theme = t;
+		applyTheme(t);
+		// menu stays open, so the change is visible and easy to undo
+	}
 
 	async function logout() {
 		menuOpen = false;
@@ -105,6 +129,18 @@
 								<button onclick={logout}>
 									<Icon name="logout" size={18} /> Uitloggen
 								</button>
+								<div class="themerow" role="group" aria-label="Thema">
+									{#each THEMES as t (t.key)}
+										<button
+											class:on={theme === t.key}
+											aria-pressed={theme === t.key}
+											onclick={() => pickTheme(t.key)}
+										>
+											<Icon name={t.icon} size={17} />
+											{t.label}
+										</button>
+									{/each}
+								</div>
 							</div>
 						{/if}
 					</div>
@@ -128,9 +164,52 @@
 		--good: #1a7f37;
 		--warn: #c2410c;
 		--bad: #b91c1c;
+		/* text/icons on a solid --good/--bad/--ink fill */
+		--on-fill: #ffffff;
+		/* light plate third-party logos need to stay readable on a dark surface */
+		--plate: transparent;
+		--plate-pad: 0;
 		--radius: 14px;
 		--radius-s: 10px;
 		--shadow: 0 1px 2px rgba(33, 29, 24, 0.06), 0 4px 12px rgba(33, 29, 24, 0.05);
+		color-scheme: light;
+	}
+	/* Dark palette, stated twice on purpose: once for "auto" (follow the
+	   system unless the member picked light) and once for an explicit choice.
+	   data-theme is set by the inline script in app.html and by $lib/theme. */
+	@media (prefers-color-scheme: dark) {
+		:global(:root:not([data-theme='light'])) {
+			--bg: #16130f;
+			--surface: #201c17;
+			--ink: #f0ebe2;
+			--muted: #a79d8e;
+			--line: #332e27;
+			--accent: #d8a13f;
+			--good: #4fbd72;
+			--warn: #f08e4f;
+			--bad: #ef6f6f;
+			--on-fill: #16130f;
+			--plate: #ffffff;
+			--plate-pad: 0.2rem;
+			--shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.4);
+			color-scheme: dark;
+		}
+	}
+	:global(:root[data-theme='dark']) {
+		--bg: #16130f;
+		--surface: #201c17;
+		--ink: #f0ebe2;
+		--muted: #a79d8e;
+		--line: #332e27;
+		--accent: #d8a13f;
+		--good: #4fbd72;
+		--warn: #f08e4f;
+		--bad: #ef6f6f;
+		--on-fill: #16130f;
+		--plate: #ffffff;
+		--plate-pad: 0.2rem;
+		--shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.4);
+		color-scheme: dark;
 	}
 	:global(*),
 	:global(*::before),
@@ -236,7 +315,7 @@
 		top: calc(100% + 0.35rem);
 		right: 0;
 		z-index: 20;
-		min-width: 11rem;
+		min-width: 12.5rem;
 		display: flex;
 		flex-direction: column;
 		padding: 0.35rem;
@@ -267,6 +346,29 @@
 	.menu button:hover,
 	.menu button:active {
 		background: var(--bg);
+	}
+	/* light / dark / auto, per device */
+	.themerow {
+		display: flex;
+		gap: 0.2rem;
+		margin-top: 0.35rem;
+		padding-top: 0.35rem;
+		border-top: 1px solid var(--line);
+	}
+	.menu .themerow button {
+		flex: 1;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.2rem;
+		padding: 0.45rem 0.2rem;
+		font-size: 0.7rem;
+		font-weight: 600;
+		text-align: center;
+		color: var(--muted);
+	}
+	.menu .themerow button.on {
+		background: var(--bg);
+		color: var(--ink);
 	}
 
 	main {

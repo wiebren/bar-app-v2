@@ -223,11 +223,11 @@
 	}
 	.startbtn {
 		background: var(--good);
-		color: #fff;
+		color: var(--on-fill);
 	}
 	.stopbtn {
 		background: var(--bad);
-		color: #fff;
+		color: var(--on-fill);
 		margin-top: 0.6rem;
 	}
 	.startbtn:disabled,

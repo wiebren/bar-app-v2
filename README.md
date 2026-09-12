@@ -44,6 +44,10 @@ PWA from `pb_public/`. One process, no Node on the server, deploys are
   deliveries and counts, sales reports, mail templates, and app settings
   (title, thresholds, top-up routes, digest) — all in-app; the PocketBase admin UI is
   only needed for initial setup.
+- **Light or dark** — a warm dark palette next to the cream one, picked per
+  device from the header menu: *Auto* (follow the phone, the default), *Licht*
+  or *Donker*. The choice lives in `localStorage`, is applied before the first
+  paint so nothing flashes, and moves the PWA status-bar colour with it.
 - **Installable PWA** — add-to-homescreen till behaviour, including a
   stale-build reload check when iOS resumes a docked app.
 

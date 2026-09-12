@@ -220,6 +220,9 @@
 	.qr {
 		width: min(100%, 17.5rem);
 		image-rendering: pixelated;
+		/* the code keeps its own white quiet zone, so it stays a light tile
+		   on a dark card — round it off so that reads as deliberate */
+		border-radius: 6px;
 	}
 	.banks {
 		display: flex;
@@ -230,6 +233,9 @@
 		opacity: 0.75;
 	}
 	.banks img {
+		padding: var(--plate-pad);
+		border-radius: 4px;
+		background: var(--plate);
 		height: 1.15rem;
 		width: auto;
 		max-width: 4.5rem;

@@ -175,8 +175,8 @@
 			</div>
 		{:else}
 			<div class="actions">
-				<button class="ok" onclick={() => confirm()} disabled={busy}>Bevestigen</button>
 				<a class="back" href="/tab/{me?.id}">Annuleren</a>
+				<button class="ok" onclick={() => confirm()} disabled={busy}>Bevestigen</button>
 			</div>
 		{/if}
 
@@ -384,7 +384,7 @@
 	}
 	.ok {
 		background: var(--good);
-		color: #fff;
+		color: var(--on-fill);
 	}
 	.back {
 		display: block;

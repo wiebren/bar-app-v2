@@ -103,9 +103,9 @@
 				<input type="checkbox" bind:checked={negative} />afboeken (correctie)
 			</label>
 		</div>
-		<div class="row">
-			<button class="btn">Verder</button>
+		<div class="row confirm">
 			<button class="btn danger" type="button" onclick={() => (selected = null)}>Annuleren</button>
+			<button class="btn">Verder</button>
 		</div>
 	</form>
 {:else}
@@ -116,9 +116,9 @@
 			<strong>{displayName(selected)}</strong>.<br />
 			Saldo: {euro(selected.balance ?? 0)} → <strong>{euro((selected.balance ?? 0) + amount)}</strong>
 		</p>
-		<div class="row">
-			<button class="btn" onclick={commit}>OK</button>
+		<div class="row confirm">
 			<button class="btn danger" onclick={() => (confirming = false)}>Terug</button>
+			<button class="btn" onclick={commit}>OK</button>
 		</div>
 	</div>
 {/if}

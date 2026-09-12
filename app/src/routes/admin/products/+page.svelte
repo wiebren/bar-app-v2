@@ -154,11 +154,11 @@
 				</label>
 			</div>
 		{/if}
-		<div class="row">
-			<button class="btn" disabled={busy}>Opslaan</button>
+		<div class="row confirm">
 			<button class="btn danger" type="button" onclick={() => { adding = false; editing = null; }}>
 				Annuleren
 			</button>
+			<button class="btn" disabled={busy}>Opslaan</button>
 		</div>
 	</form>
 

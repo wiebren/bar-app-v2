@@ -35,6 +35,11 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
+		/* dark-ink logos need a light plate once the card goes dark;
+		   --plate is transparent in the light theme */
+		padding: var(--plate-pad);
+		border-radius: 4px;
+		background: var(--plate);
 	}
 	.badge img {
 		display: block;

@@ -66,6 +66,14 @@
 		flex: 1;
 		min-width: 8rem;
 	}
+	/* a confirm/cancel pair: cancel left, confirm right, filling the width */
+	:global(.panel .row.confirm) {
+		flex-wrap: nowrap;
+	}
+	:global(.panel .row.confirm > button.btn) {
+		flex: 1;
+		align-self: stretch;
+	}
 	:global(.panel label.check) {
 		flex-direction: row;
 		align-items: center;

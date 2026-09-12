@@ -109,8 +109,8 @@
 			{/if}
 		</p>
 		<div class="actions">
-			<button class="ok" onclick={backToProducts}>Volgend product</button>
 			<a class="back" href="/admin">Terug</a>
+			<button class="ok" onclick={backToProducts}>Volgend product</button>
 		</div>
 	</div>
 {:else if !product}
@@ -180,10 +180,10 @@
 
 	{#if error}<p class="error">{error}</p>{/if}
 	<div class="actions">
+		<button class="back" onclick={backToProducts} disabled={busy}>Terug</button>
 		<button class="ok" onclick={submit} disabled={busy || (!isCount && total < 1)}>
 			{isCount ? 'Verwerk telling' : 'Boek inkoop'}
 		</button>
-		<button class="back" onclick={backToProducts} disabled={busy}>Terug</button>
 	</div>
 {/if}
 
@@ -335,7 +335,7 @@
 	}
 	.ok {
 		background: var(--good);
-		color: #fff;
+		color: var(--on-fill);
 	}
 	.ok:disabled {
 		opacity: 0.5;
