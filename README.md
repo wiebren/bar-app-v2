@@ -155,7 +155,8 @@ Checks: `npm run check` (svelte-check / TypeScript).
   correction delta.
 - `GET/POST /api/bar/mail-debtors/{red|yellow}` — admin-only; GET previews
   recipients, POST sends.
-- Cron `daily-digest` (21:30 UTC) — per-user summary of the day's orders.
+- Cron `daily-digest` (11:00 Dutch time) — per-user summary of the past day's
+  orders.
 
 ## License
 

@@ -358,11 +358,18 @@ routerAdd(
 );
 
 // ---------------------------------------------------------------------------
-// 5.5 Daily digest: each user with orders today gets a summary mail.
-//     On the 1st of the month it also runs the shelf-life check.
+// 5.5 Daily digest: each user with orders in the past day gets a summary
+//     mail at 11:00 Dutch time. On the 1st of the month it also runs the
+//     shelf-life check.
 // ---------------------------------------------------------------------------
-cronAdd('daily-digest', '30 21 * * *', () => {
+// Cron runs in UTC, where 11:00 Dutch time is 09:00 (summer) or 10:00
+// (winter): fire at both and let only the one that is 11:00 locally through.
+cronAdd('daily-digest', '0 9,10 * * *', () => {
 	const utils = require(`${__hooks}/bar_utils.js`);
+
+	const DIGEST_HOUR = 11;
+	const now = new Date();
+	if (now.getUTCHours() + utils.nlUtcOffset(now) !== DIGEST_HOUR) return;
 
 	// Monthly shelf-life check (1st only): stock above what was added the
 	// past 3 months means the surplus predates that window (FIFO) — mail
@@ -403,12 +410,25 @@ cronAdd('daily-digest', '30 21 * * *', () => {
 	const settings = utils.getSettings($app);
 	if (!settings.getBool('digest_enabled')) return;
 
-	// "today" in UTC — close enough for an end-of-day digest; created is stored UTC
-	const start = new Date();
-	start.setUTCHours(0, 0, 0, 0);
+	// Window: yesterday 11:00 to today 11:00, Dutch time — a whole bar night,
+	// including what is ordered after midnight. Both ends are pinned to the
+	// hour (not "24h ago") so consecutive digests neither overlap nor leave a
+	// gap, also across a DST change. created is stored UTC.
+	const end = new Date(now);
+	end.setUTCMinutes(0, 0, 0);
+	const start = new Date(end);
+	start.setUTCDate(start.getUTCDate() - 1);
+	start.setUTCHours(DIGEST_HOUR - utils.nlUtcOffset(start));
 	const startStr = start.toISOString().replace('T', ' ');
+	const endStr = end.toISOString().replace('T', ' ');
 
-	const orders = $app.findRecordsByFilter('orders', `created >= "${startStr}"`, 'created', 0, 0);
+	const orders = $app.findRecordsByFilter(
+		'orders',
+		`created >= "${startStr}" && created < "${endStr}"`,
+		'created',
+		0,
+		0
+	);
 	const byUser = {};
 	for (const o of orders) {
 		(byUser[o.getString('user')] ??= []).push(o);
@@ -434,9 +454,9 @@ cronAdd('daily-digest', '30 21 * * *', () => {
 					name: settings.getString('app_title') || 'Bar-app'
 				},
 				to: [{ address: user.email() }],
-				subject: 'Je consumpties van vandaag',
+				subject: 'Je consumpties van de afgelopen dag',
 				text:
-					`Beste ${user.getString('first_name')},\n\nVandaag is er op jouw rekening gestreept:\n\n` +
+					`Beste ${user.getString('first_name')},\n\nIn de afgelopen 24 uur is er op jouw rekening gestreept:\n\n` +
 					lines.join('\n') +
 					`\n\nHuidig saldo: €${user.getFloat('balance').toFixed(2)}\n\nKlopt er iets niet? Meld het bij de barcommissie.`
 			});

@@ -32,6 +32,21 @@ function round2(n) {
 }
 
 /**
+ * Hours the Netherlands is ahead of UTC at the given moment: 2 during EU
+ * summer time (last Sunday of March 01:00 UTC to last Sunday of October
+ * 01:00 UTC), else 1. Computed by hand — cron runs in UTC and the JSVM has
+ * no time zone database.
+ */
+function nlUtcOffset(date) {
+	const lastSunday = (month) => {
+		const d = new Date(Date.UTC(date.getUTCFullYear(), month + 1, 0, 1));
+		d.setUTCDate(d.getUTCDate() - d.getUTCDay());
+		return d;
+	};
+	return date >= lastSunday(2) && date < lastSunday(9) ? 2 : 1;
+}
+
+/**
  * Send one of the templated balance mails ("red" | "yellow") to a user.
  * Body layout matches the old app: salutation + first name, text, balance, text.
  */
@@ -133,6 +148,7 @@ module.exports = {
 	requireActiveAdmin,
 	fullName,
 	round2,
+	nlUtcOffset,
 	sendBalanceMail,
 	sendAdminMail,
 	sendLowStockMail,
